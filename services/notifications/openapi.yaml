@@ -129,6 +129,15 @@ paths:
           $ref: '#/components/responses/NotFound'
       security:
         - bearerAuth: []
+    delete:
+      tags: [Notifications]
+      summary: Delete notification
+      operationId: deleteNotification
+      responses:
+        '204':
+          description: Notification deleted
+      security:
+        - bearerAuth: []
 
   /notifications/{id}/read:
     patch:
@@ -164,22 +173,6 @@ paths:
                 type: object
                 properties:
                   updatedCount: { type: integer }
-      security:
-        - bearerAuth: []
-
-  /notifications/{id}:
-    delete:
-      tags: [Notifications]
-      summary: Delete notification
-      operationId: deleteNotification
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: string, format: uuid }
-      responses:
-        '204':
-          description: Notification deleted
       security:
         - bearerAuth: []
 
