@@ -1,0 +1,508 @@
+openapi: 3.0.3
+info:
+  title: Orders API
+  description: |
+    Order processing and fulfillment service. Manages the full order lifecycle
+    from cart to delivery, including status tracking and returns.
+  version: 1.4.0
+  contact:
+    name: Commerce Team
+    email: commerce@example.com
+
+servers:
+  - url: https://api.example.com/v1
+    description: Production
+  - url: https://staging-api.example.com/v1
+    description: Staging
+  - url: http://localhost:3003/v1
+    description: Local development
+
+tags:
+  - name: Orders
+    description: Order management
+  - name: Cart
+    description: Shopping cart operations
+  - name: Returns
+    description: Return and refund management
+  - name: Shipping
+    description: Shipping and tracking
+
+paths:
+  /orders:
+    get:
+      tags: [Orders]
+      summary: List orders
+      operationId: listOrders
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, processing, shipped, delivered, cancelled, refunded]
+        - name: userId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: from
+          in: query
+          description: Start date filter
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          description: End date filter
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Paginated order list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderList'
+      security:
+        - bearerAuth: []
+
+    post:
+      tags: [Orders]
+      summary: Create order
+      description: Place a new order. Validates stock and calculates totals.
+      operationId: createOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+            example:
+              items:
+                - productId: "550e8400-e29b-41d4-a716-446655440001"
+                  variantId: "550e8400-e29b-41d4-a716-446655440002"
+                  quantity: 2
+              shippingAddressId: "550e8400-e29b-41d4-a716-446655440003"
+              paymentMethodId: "pm_card_visa"
+              couponCode: "SAVE10"
+      responses:
+        '201':
+          description: Order placed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          description: Payment required / insufficient funds
+        '409':
+          description: Item out of stock
+      security:
+        - bearerAuth: []
+
+  /orders/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Orders]
+      summary: Get order by ID
+      operationId: getOrder
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /orders/{id}/status:
+    patch:
+      tags: [Orders]
+      summary: Update order status
+      operationId: updateOrderStatus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [confirmed, processing, shipped, delivered, cancelled]
+                note: { type: string }
+      responses:
+        '200':
+          description: Order status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '422':
+          description: Invalid status transition
+      security:
+        - bearerAuth: []
+
+  /orders/{id}/cancel:
+    post:
+      tags: [Orders]
+      summary: Cancel order
+      operationId: cancelOrder
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  enum: [customer_request, out_of_stock, payment_failed, fraud]
+      responses:
+        '200':
+          description: Order cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '422':
+          description: Order cannot be cancelled in current state
+      security:
+        - bearerAuth: []
+
+  /cart:
+    get:
+      tags: [Cart]
+      summary: Get current cart
+      operationId: getCart
+      responses:
+        '200':
+          description: Current user's cart
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+      security:
+        - bearerAuth: []
+
+  /cart/items:
+    post:
+      tags: [Cart]
+      summary: Add item to cart
+      operationId: addToCart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productId, quantity]
+              properties:
+                productId: { type: string, format: uuid }
+                variantId: { type: string, format: uuid }
+                quantity: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Cart updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+      security:
+        - bearerAuth: []
+
+  /cart/items/{itemId}:
+    patch:
+      tags: [Cart]
+      summary: Update cart item quantity
+      operationId: updateCartItem
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quantity]
+              properties:
+                quantity: { type: integer, minimum: 0 }
+      responses:
+        '200':
+          description: Cart updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+      security:
+        - bearerAuth: []
+    delete:
+      tags: [Cart]
+      summary: Remove item from cart
+      operationId: removeCartItem
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Item removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+      security:
+        - bearerAuth: []
+
+  /orders/{id}/returns:
+    post:
+      tags: [Returns]
+      summary: Request a return
+      operationId: requestReturn
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items, reason]
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      orderItemId: { type: string, format: uuid }
+                      quantity: { type: integer, minimum: 1 }
+                reason:
+                  type: string
+                  enum: [damaged, wrong_item, not_as_described, changed_mind]
+                description: { type: string }
+      responses:
+        '201':
+          description: Return requested
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Return'
+      security:
+        - bearerAuth: []
+
+  /orders/{id}/tracking:
+    get:
+      tags: [Shipping]
+      summary: Get shipment tracking
+      operationId: getTracking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Tracking information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tracking'
+        '404':
+          description: No tracking info yet
+      security:
+        - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Order:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        orderNumber: { type: string, example: "ORD-2024-001234" }
+        userId: { type: string, format: uuid }
+        status:
+          type: string
+          enum: [pending, confirmed, processing, shipped, delivered, cancelled, refunded]
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        subtotal: { type: number, format: float }
+        discount: { type: number, format: float }
+        shippingCost: { type: number, format: float }
+        tax: { type: number, format: float }
+        total: { type: number, format: float }
+        currency: { type: string, example: "USD" }
+        shippingAddress:
+          $ref: '#/components/schemas/Address'
+        notes: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    OrderItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        productId: { type: string, format: uuid }
+        productName: { type: string }
+        variantName: { type: string, nullable: true }
+        quantity: { type: integer }
+        unitPrice: { type: number, format: float }
+        totalPrice: { type: number, format: float }
+
+    CreateOrderRequest:
+      type: object
+      required: [items, shippingAddressId]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [productId, quantity]
+            properties:
+              productId: { type: string, format: uuid }
+              variantId: { type: string, format: uuid }
+              quantity: { type: integer, minimum: 1 }
+        shippingAddressId: { type: string, format: uuid }
+        paymentMethodId: { type: string }
+        couponCode: { type: string }
+        notes: { type: string }
+
+    Cart:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        subtotal: { type: number }
+        itemCount: { type: integer }
+        updatedAt: { type: string, format: date-time }
+
+    CartItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        productId: { type: string, format: uuid }
+        productName: { type: string }
+        variantName: { type: string, nullable: true }
+        quantity: { type: integer }
+        unitPrice: { type: number }
+        imageUrl: { type: string, format: uri }
+
+    Return:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        orderId: { type: string, format: uuid }
+        status:
+          type: string
+          enum: [requested, approved, rejected, received, refunded]
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              orderItemId: { type: string, format: uuid }
+              quantity: { type: integer }
+        reason: { type: string }
+        refundAmount: { type: number, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    Tracking:
+      type: object
+      properties:
+        orderId: { type: string, format: uuid }
+        carrier: { type: string, example: "FedEx" }
+        trackingNumber: { type: string }
+        trackingUrl: { type: string, format: uri }
+        estimatedDelivery: { type: string, format: date }
+        events:
+          type: array
+          items:
+            type: object
+            properties:
+              status: { type: string }
+              location: { type: string }
+              timestamp: { type: string, format: date-time }
+              description: { type: string }
+
+    Address:
+      type: object
+      properties:
+        line1: { type: string }
+        line2: { type: string, nullable: true }
+        city: { type: string }
+        state: { type: string }
+        postalCode: { type: string }
+        country: { type: string }
+
+    OrderList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    Pagination:
+      type: object
+      properties:
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+        totalPages: { type: integer }
+
+    Error:
+      type: object
+      properties:
+        code: { type: string }
+        message: { type: string }
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }

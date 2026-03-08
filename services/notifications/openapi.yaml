@@ -1,0 +1,613 @@
+openapi: 3.0.3
+info:
+  title: Notifications API
+  description: |
+    Multi-channel notification and alerting service. Supports email, SMS,
+    push notifications, and in-app messages. Includes template management,
+    delivery tracking, and user preference control.
+  version: 1.0.5
+  contact:
+    name: Platform Team
+    email: platform@example.com
+
+servers:
+  - url: https://api.example.com/v1
+    description: Production
+  - url: https://staging-api.example.com/v1
+    description: Staging
+  - url: http://localhost:3005/v1
+    description: Local development
+
+tags:
+  - name: Notifications
+    description: Send and manage notifications
+  - name: Templates
+    description: Notification template management
+  - name: Preferences
+    description: User notification preferences
+  - name: Subscriptions
+    description: Push notification device subscriptions
+  - name: Analytics
+    description: Delivery and engagement analytics
+
+paths:
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: List notifications for current user
+      operationId: listNotifications
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 30, maximum: 100 }
+        - name: read
+          in: query
+          description: Filter by read status
+          schema: { type: boolean }
+        - name: channel
+          in: query
+          schema:
+            type: string
+            enum: [email, sms, push, in_app]
+      responses:
+        '200':
+          description: Notification list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationList'
+      security:
+        - bearerAuth: []
+
+  /notifications/send:
+    post:
+      tags: [Notifications]
+      summary: Send a notification
+      description: |
+        Send a notification via one or more channels. Use a template or provide
+        content inline. Supports scheduling for future delivery.
+      operationId: sendNotification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendNotificationRequest'
+            examples:
+              template_based:
+                summary: Using a template
+                value:
+                  recipients:
+                    - userId: "550e8400-e29b-41d4-a716-446655440000"
+                  templateId: "order-confirmation"
+                  templateData:
+                    orderNumber: "ORD-2024-001234"
+                    total: "$99.99"
+                  channels: [email, push]
+              inline:
+                summary: Inline content
+                value:
+                  recipients:
+                    - userId: "550e8400-e29b-41d4-a716-446655440000"
+                  channels: [in_app]
+                  content:
+                    title: "Your order has shipped!"
+                    body: "Expected delivery: March 15"
+      responses:
+        '202':
+          description: Notification queued for delivery
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+      security:
+        - bearerAuth: []
+
+  /notifications/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Notifications]
+      summary: Get notification details
+      operationId: getNotification
+      responses:
+        '200':
+          description: Notification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /notifications/{id}/read:
+    patch:
+      tags: [Notifications]
+      summary: Mark as read
+      operationId: markAsRead
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+      security:
+        - bearerAuth: []
+
+  /notifications/read-all:
+    post:
+      tags: [Notifications]
+      summary: Mark all as read
+      operationId: markAllAsRead
+      responses:
+        '200':
+          description: All notifications marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updatedCount: { type: integer }
+      security:
+        - bearerAuth: []
+
+  /notifications/{id}:
+    delete:
+      tags: [Notifications]
+      summary: Delete notification
+      operationId: deleteNotification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204':
+          description: Notification deleted
+      security:
+        - bearerAuth: []
+
+  /templates:
+    get:
+      tags: [Templates]
+      summary: List notification templates
+      operationId: listTemplates
+      parameters:
+        - name: channel
+          in: query
+          schema:
+            type: string
+            enum: [email, sms, push, in_app]
+      responses:
+        '200':
+          description: Template list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Template'
+      security:
+        - bearerAuth: []
+
+    post:
+      tags: [Templates]
+      summary: Create template
+      operationId: createTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTemplateRequest'
+            example:
+              id: "order-confirmation"
+              name: Order Confirmation
+              channel: email
+              subject: "Your order {{orderNumber}} is confirmed!"
+              body: "Hi {{customerName}}, your order for {{total}} has been confirmed."
+              variables: [orderNumber, customerName, total]
+      responses:
+        '201':
+          description: Template created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+      security:
+        - bearerAuth: []
+
+  /templates/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      tags: [Templates]
+      summary: Get template
+      operationId: getTemplate
+      responses:
+        '200':
+          description: Template details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+    put:
+      tags: [Templates]
+      summary: Update template
+      operationId: updateTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTemplateRequest'
+      responses:
+        '200':
+          description: Updated template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+      security:
+        - bearerAuth: []
+    delete:
+      tags: [Templates]
+      summary: Delete template
+      operationId: deleteTemplate
+      responses:
+        '204':
+          description: Template deleted
+      security:
+        - bearerAuth: []
+
+  /preferences:
+    get:
+      tags: [Preferences]
+      summary: Get user notification preferences
+      operationId: getPreferences
+      responses:
+        '200':
+          description: User preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Preferences'
+      security:
+        - bearerAuth: []
+    put:
+      tags: [Preferences]
+      summary: Update preferences
+      operationId: updatePreferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Preferences'
+      responses:
+        '200':
+          description: Updated preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Preferences'
+      security:
+        - bearerAuth: []
+
+  /subscriptions:
+    post:
+      tags: [Subscriptions]
+      summary: Register push subscription
+      description: Register a device token for push notifications.
+      operationId: registerSubscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, platform]
+              properties:
+                token: { type: string, description: "Device push token" }
+                platform:
+                  type: string
+                  enum: [ios, android, web]
+                deviceId: { type: string }
+                deviceName: { type: string }
+      responses:
+        '201':
+          description: Subscription registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+      security:
+        - bearerAuth: []
+
+  /subscriptions/{id}:
+    delete:
+      tags: [Subscriptions]
+      summary: Remove push subscription
+      operationId: deleteSubscription
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204':
+          description: Subscription removed
+      security:
+        - bearerAuth: []
+
+  /analytics/delivery:
+    get:
+      tags: [Analytics]
+      summary: Get delivery statistics
+      operationId: getDeliveryStats
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: channel
+          in: query
+          schema:
+            type: string
+            enum: [email, sms, push, in_app]
+        - name: templateId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Delivery statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeliveryStats'
+      security:
+        - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Notification:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        channel:
+          type: string
+          enum: [email, sms, push, in_app]
+        title: { type: string }
+        body: { type: string }
+        data:
+          type: object
+          additionalProperties: true
+          description: Extra metadata / deep link payload
+        isRead: { type: boolean }
+        readAt: { type: string, format: date-time, nullable: true }
+        deliveryStatus:
+          type: string
+          enum: [queued, sent, delivered, failed]
+        createdAt: { type: string, format: date-time }
+
+    SendNotificationRequest:
+      type: object
+      required: [recipients, channels]
+      properties:
+        recipients:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            properties:
+              userId: { type: string, format: uuid }
+              email: { type: string, format: email }
+              phone: { type: string }
+        channels:
+          type: array
+          items:
+            type: string
+            enum: [email, sms, push, in_app]
+        templateId:
+          type: string
+          description: Template ID (mutually exclusive with content)
+        templateData:
+          type: object
+          additionalProperties: { type: string }
+        content:
+          type: object
+          description: Inline content (mutually exclusive with templateId)
+          properties:
+            title: { type: string }
+            body: { type: string }
+            imageUrl: { type: string, format: uri }
+            actionUrl: { type: string, format: uri }
+        scheduledAt:
+          type: string
+          format: date-time
+          description: Schedule for future delivery
+        priority:
+          type: string
+          enum: [low, normal, high, critical]
+          default: normal
+
+    SendResult:
+      type: object
+      properties:
+        batchId: { type: string, format: uuid }
+        queued: { type: integer }
+        skipped: { type: integer }
+        estimatedDelivery: { type: string, format: date-time }
+
+    NotificationList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+        unreadCount: { type: integer }
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    Template:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        channel:
+          type: string
+          enum: [email, sms, push, in_app]
+        subject: { type: string, nullable: true }
+        body: { type: string }
+        variables:
+          type: array
+          items: { type: string }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateTemplateRequest:
+      type: object
+      required: [id, name, channel, body]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        channel:
+          type: string
+          enum: [email, sms, push, in_app]
+        subject: { type: string }
+        body: { type: string }
+        variables:
+          type: array
+          items: { type: string }
+
+    Preferences:
+      type: object
+      properties:
+        email:
+          $ref: '#/components/schemas/ChannelPreference'
+        sms:
+          $ref: '#/components/schemas/ChannelPreference'
+        push:
+          $ref: '#/components/schemas/ChannelPreference'
+        inApp:
+          $ref: '#/components/schemas/ChannelPreference'
+        doNotDisturb:
+          type: object
+          properties:
+            enabled: { type: boolean }
+            from: { type: string, format: time, example: "22:00" }
+            to: { type: string, format: time, example: "08:00" }
+            timezone: { type: string, example: "America/New_York" }
+
+    ChannelPreference:
+      type: object
+      properties:
+        enabled: { type: boolean }
+        categories:
+          type: object
+          description: Per-category opt-in/out
+          additionalProperties: { type: boolean }
+          example:
+            marketing: false
+            transactional: true
+            security: true
+
+    Subscription:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        token: { type: string }
+        platform:
+          type: string
+          enum: [ios, android, web]
+        deviceId: { type: string }
+        deviceName: { type: string }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    DeliveryStats:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            from: { type: string, format: date }
+            to: { type: string, format: date }
+        totals:
+          type: object
+          properties:
+            sent: { type: integer }
+            delivered: { type: integer }
+            failed: { type: integer }
+            opened: { type: integer }
+            clicked: { type: integer }
+        deliveryRate: { type: number, format: float, example: 98.5 }
+        openRate: { type: number, format: float, example: 24.3 }
+        clickRate: { type: number, format: float, example: 4.7 }
+        byChannel:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              sent: { type: integer }
+              delivered: { type: integer }
+              deliveryRate: { type: number }
+
+    Pagination:
+      type: object
+      properties:
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+        totalPages: { type: integer }
+
+    Error:
+      type: object
+      properties:
+        code: { type: string }
+        message: { type: string }
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
