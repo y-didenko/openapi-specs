@@ -1,0 +1,512 @@
+openapi: 3.0.3
+info:
+  title: Fees API
+  description: Fee schedule configuration and assessment.
+  version: 2.0.0
+  contact:
+    name: Fees Team
+    email: fees@example.com
+servers:
+- url: https://api.example.com/fees/v1
+  description: Production
+- url: https://staging-api.example.com/fees/v1
+  description: Staging
+tags:
+- name: Fees
+  description: Fees resource operations.
+- name: Imports
+  description: Imports resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /fees:
+    get:
+      tags:
+      - Fees
+      summary: List fees
+      operationId: listFee
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of fees.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeeList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Fees
+      summary: Create fee
+      operationId: createFee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFeeRequest'
+      responses:
+        '201':
+          description: Fee created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fee'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /fees/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Fees
+      summary: Get fee by ID
+      operationId: getFee
+      responses:
+        '200':
+          description: Fee details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fee'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Fees
+      summary: Update fee
+      operationId: updateFee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFeeRequest'
+      responses:
+        '200':
+          description: Fee updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fee'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Fees
+      summary: Delete fee
+      operationId: deleteFee
+      responses:
+        '204':
+          description: Fee deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /imports:
+    get:
+      tags:
+      - Imports
+      summary: List imports
+      operationId: listImport
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of imports.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Imports
+      summary: Create import
+      operationId: createImport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateImportRequest'
+      responses:
+        '201':
+          description: Import created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /imports/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Imports
+      summary: Get import by ID
+      operationId: getImport
+      responses:
+        '200':
+          description: Import details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Imports
+      summary: Update import
+      operationId: updateImport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateImportRequest'
+      responses:
+        '200':
+          description: Import updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Imports
+      summary: Delete import
+      operationId: deleteImport
+      responses:
+        '204':
+          description: Import deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Fee:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        code: &id001
+          type: string
+        name: &id002
+          type: string
+        weight: &id003
+          type: number
+          format: float
+        rank: &id004
+          type: integer
+        visible: &id005
+          type: boolean
+        lastSeenAt: &id006
+          type: string
+          format: date-time
+        dueDate: &id007
+          type: string
+          format: date
+        teamId: &id008
+          type: string
+          format: uuid
+        createdBy: &id009
+          type: string
+          format: uuid
+        email: &id010
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    FeeList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Fee'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateFeeRequest:
+      type: object
+      properties:
+        code: *id001
+        name: *id002
+        weight: *id003
+        rank: *id004
+        visible: *id005
+        lastSeenAt: *id006
+        dueDate: *id007
+        teamId: *id008
+        createdBy: *id009
+        email: *id010
+      required:
+      - code
+      - name
+    UpdateFeeRequest:
+      type: object
+      properties:
+        code: *id001
+        name: *id002
+        weight: *id003
+        rank: *id004
+        visible: *id005
+        lastSeenAt: *id006
+        dueDate: *id007
+        teamId: *id008
+        createdBy: *id009
+        email: *id010
+      required:
+      - code
+      - name
+    Import:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - scheduled
+          - running
+          - completed
+          - failed
+        code: &id011
+          type: string
+        externalId: &id012
+          type: string
+        archived: &id013
+          type: boolean
+        expiresAt: &id014
+          type: string
+          format: date-time
+        publishedAt: &id015
+          type: string
+          format: date-time
+        currency: &id016
+          type: string
+        fee: &id017
+          type: number
+          format: float
+        updatedBy: &id018
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ImportList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Import'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateImportRequest:
+      type: object
+      properties:
+        code: *id011
+        externalId: *id012
+        archived: *id013
+        expiresAt: *id014
+        publishedAt: *id015
+        currency: *id016
+        fee: *id017
+        updatedBy: *id018
+      required:
+      - code
+      - externalId
+    UpdateImportRequest:
+      type: object
+      properties:
+        code: *id011
+        externalId: *id012
+        archived: *id013
+        expiresAt: *id014
+        publishedAt: *id015
+        currency: *id016
+        fee: *id017
+        updatedBy: *id018
+      required:
+      - code
+      - externalId
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

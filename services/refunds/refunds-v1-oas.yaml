@@ -1,0 +1,866 @@
+openapi: 3.0.3
+info:
+  title: Refunds API
+  description: Refund issuance and reconciliation.
+  version: 1.0.0
+  contact:
+    name: Refunds Team
+    email: refunds@example.com
+servers:
+- url: https://api.example.com/refunds/v1
+  description: Production
+- url: https://staging-api.example.com/refunds/v1
+  description: Staging
+tags:
+- name: Refunds
+  description: Refunds resource operations.
+- name: Templates
+  description: Templates resource operations.
+- name: Rules
+  description: Rules resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /refunds:
+    get:
+      tags:
+      - Refunds
+      summary: List refunds
+      operationId: listRefund
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of refunds.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefundList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Refunds
+      summary: Create refund
+      operationId: createRefund
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRefundRequest'
+      responses:
+        '201':
+          description: Refund created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Refund'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /refunds/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Refunds
+      summary: Get refund by ID
+      operationId: getRefund
+      responses:
+        '200':
+          description: Refund details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Refund'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Refunds
+      summary: Update refund
+      operationId: updateRefund
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRefundRequest'
+      responses:
+        '200':
+          description: Refund updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Refund'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Refunds
+      summary: Delete refund
+      operationId: deleteRefund
+      responses:
+        '204':
+          description: Refund deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /refunds/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Refunds
+      summary: Get audit trail
+      operationId: getRefundAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /templates:
+    get:
+      tags:
+      - Templates
+      summary: List templates
+      operationId: listTemplate
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of templates.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Templates
+      summary: Create template
+      operationId: createTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTemplateRequest'
+      responses:
+        '201':
+          description: Template created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /templates/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Templates
+      summary: Get template by ID
+      operationId: getTemplate
+      responses:
+        '200':
+          description: Template details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Templates
+      summary: Update template
+      operationId: updateTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTemplateRequest'
+      responses:
+        '200':
+          description: Template updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Templates
+      summary: Delete template
+      operationId: deleteTemplate
+      responses:
+        '204':
+          description: Template deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /templates/stats:
+    get:
+      tags:
+      - Templates
+      summary: Aggregate templates stats
+      operationId: getTemplateStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /rules:
+    get:
+      tags:
+      - Rules
+      summary: List rules
+      operationId: listRule
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of rules.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Rules
+      summary: Create rule
+      operationId: createRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRuleRequest'
+      responses:
+        '201':
+          description: Rule created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /rules/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Rules
+      summary: Get rule by ID
+      operationId: getRule
+      responses:
+        '200':
+          description: Rule details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Rules
+      summary: Update rule
+      operationId: updateRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRuleRequest'
+      responses:
+        '200':
+          description: Rule updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Rules
+      summary: Delete rule
+      operationId: deleteRule
+      responses:
+        '204':
+          description: Rule deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    Refund:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        slug: &id001
+          type: string
+        title: &id002
+          type: string
+        summary: &id003
+          type: string
+        score: &id004
+          type: number
+          format: float
+        capacity: &id005
+          type: integer
+        enabled: &id006
+          type: boolean
+        locked: &id007
+          type: boolean
+        endDate: &id008
+          type: string
+          format: date
+        fee: &id009
+          type: number
+          format: float
+        organizationId: &id010
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    RefundList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Refund'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateRefundRequest:
+      type: object
+      properties:
+        slug: *id001
+        title: *id002
+        summary: *id003
+        score: *id004
+        capacity: *id005
+        enabled: *id006
+        locked: *id007
+        endDate: *id008
+        fee: *id009
+        organizationId: *id010
+      required:
+      - slug
+      - title
+    UpdateRefundRequest:
+      type: object
+      properties:
+        slug: *id001
+        title: *id002
+        summary: *id003
+        score: *id004
+        capacity: *id005
+        enabled: *id006
+        locked: *id007
+        endDate: *id008
+        fee: *id009
+        organizationId: *id010
+      required:
+      - slug
+      - title
+    Template:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - scheduled
+          - running
+          - completed
+          - failed
+        title: &id011
+          type: string
+        description: &id012
+          type: string
+        code: &id013
+          type: string
+        weight: &id014
+          type: number
+          format: float
+        visible: &id015
+          type: boolean
+        expiresAt: &id016
+          type: string
+          format: date-time
+        publishedAt: &id017
+          type: string
+          format: date-time
+        total: &id018
+          type: number
+          format: float
+        currency: &id019
+          type: string
+        categoryId: &id020
+          type: string
+          format: uuid
+        email: &id021
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    TemplateList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Template'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateTemplateRequest:
+      type: object
+      properties:
+        title: *id011
+        description: *id012
+        code: *id013
+        weight: *id014
+        visible: *id015
+        expiresAt: *id016
+        publishedAt: *id017
+        total: *id018
+        currency: *id019
+        categoryId: *id020
+        email: *id021
+      required:
+      - title
+      - description
+    UpdateTemplateRequest:
+      type: object
+      properties:
+        title: *id011
+        description: *id012
+        code: *id013
+        weight: *id014
+        visible: *id015
+        expiresAt: *id016
+        publishedAt: *id017
+        total: *id018
+        currency: *id019
+        categoryId: *id020
+        email: *id021
+      required:
+      - title
+      - description
+    Rule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+        externalId: &id022
+          type: string
+        description: &id023
+          type: string
+        verified: &id024
+          type: boolean
+        dueDate: &id025
+          type: string
+          format: date
+        lastSeenAt: &id026
+          type: string
+          format: date-time
+        total: &id027
+          type: number
+          format: float
+        currency: &id028
+          type: string
+        createdBy: &id029
+          type: string
+          format: uuid
+        websiteUrl: &id030
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    RuleList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Rule'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateRuleRequest:
+      type: object
+      properties:
+        externalId: *id022
+        description: *id023
+        verified: *id024
+        dueDate: *id025
+        lastSeenAt: *id026
+        total: *id027
+        currency: *id028
+        createdBy: *id029
+        websiteUrl: *id030
+      required:
+      - externalId
+      - description
+    UpdateRuleRequest:
+      type: object
+      properties:
+        externalId: *id022
+        description: *id023
+        verified: *id024
+        dueDate: *id025
+        lastSeenAt: *id026
+        total: *id027
+        currency: *id028
+        createdBy: *id029
+        websiteUrl: *id030
+      required:
+      - externalId
+      - description
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

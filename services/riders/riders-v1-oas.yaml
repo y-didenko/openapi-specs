@@ -1,0 +1,799 @@
+openapi: 3.0.3
+info:
+  title: Riders API
+  description: Delivery rider roster.
+  version: 1.1.0
+  contact:
+    name: Riders Team
+    email: riders@example.com
+servers:
+- url: https://api.example.com/riders/v1
+  description: Production
+- url: https://staging-api.example.com/riders/v1
+  description: Staging
+tags:
+- name: Riders
+  description: Riders resource operations.
+- name: Configs
+  description: Configs resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /riders:
+    get:
+      tags:
+      - Riders
+      summary: List riders
+      operationId: listRider
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of riders.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiderList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Riders
+      summary: Create rider
+      operationId: createRider
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRiderRequest'
+      responses:
+        '201':
+          description: Rider created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rider'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /riders/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Riders
+      summary: Get rider by ID
+      operationId: getRider
+      responses:
+        '200':
+          description: Rider details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rider'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Riders
+      summary: Update rider
+      operationId: updateRider
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRiderRequest'
+      responses:
+        '200':
+          description: Rider updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rider'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Riders
+      summary: Delete rider
+      operationId: deleteRider
+      responses:
+        '204':
+          description: Rider deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /riders/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Riders
+      summary: Get audit trail
+      operationId: getRiderAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /riders/bulk:
+    post:
+      tags:
+      - Riders
+      summary: Bulk create riders
+      operationId: bulkCreateRider
+      description: Create up to 500 records in a single request. Returns per-row results.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  maxItems: 500
+                  items:
+                    $ref: '#/components/schemas/CreateRiderRequest'
+              required:
+              - items
+      responses:
+        '200':
+          description: Bulk operation results.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  succeeded:
+                    type: integer
+                  failed:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        index:
+                          type: integer
+                        id:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        error:
+                          type: string
+                          nullable: true
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Riders
+      summary: Bulk delete riders
+      operationId: bulkDeleteRider
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+              required:
+              - ids
+      responses:
+        '200':
+          description: Deletion summary.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: integer
+                  skipped:
+                    type: integer
+      security:
+      - bearerAuth: []
+  /riders/{id}/start:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - Riders
+      summary: Start rider
+      operationId: startRider
+      description: Transitions the record to the start state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rider'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /riders/{id}/complete:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - Riders
+      summary: Complete rider
+      operationId: completeRider
+      description: Transitions the record to the complete state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rider'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /riders/{id}/cancel:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - Riders
+      summary: Cancel rider
+      operationId: cancelRider
+      description: Transitions the record to the cancel state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rider'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /configs:
+    get:
+      tags:
+      - Configs
+      summary: List configs
+      operationId: listConfig
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of configs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Configs
+      summary: Create config
+      operationId: createConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConfigRequest'
+      responses:
+        '201':
+          description: Config created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /configs/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Configs
+      summary: Get config by ID
+      operationId: getConfig
+      responses:
+        '200':
+          description: Config details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Configs
+      summary: Update config
+      operationId: updateConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateConfigRequest'
+      responses:
+        '200':
+          description: Config updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Configs
+      summary: Delete config
+      operationId: deleteConfig
+      responses:
+        '204':
+          description: Config deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    Rider:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        notes: &id001
+          type: string
+        title: &id002
+          type: string
+        weight: &id003
+          type: number
+          format: float
+        verified: &id004
+          type: boolean
+        locked: &id005
+          type: boolean
+        completedAt: &id006
+          type: string
+          format: date-time
+        total: &id007
+          type: number
+          format: float
+        subtotal: &id008
+          type: number
+          format: float
+        tagId: &id009
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    RiderList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Rider'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateRiderRequest:
+      type: object
+      properties:
+        notes: *id001
+        title: *id002
+        weight: *id003
+        verified: *id004
+        locked: *id005
+        completedAt: *id006
+        total: *id007
+        subtotal: *id008
+        tagId: *id009
+      required:
+      - notes
+      - title
+    UpdateRiderRequest:
+      type: object
+      properties:
+        notes: *id001
+        title: *id002
+        weight: *id003
+        verified: *id004
+        locked: *id005
+        completedAt: *id006
+        total: *id007
+        subtotal: *id008
+        tagId: *id009
+      required:
+      - notes
+      - title
+    Config:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+        code: &id010
+          type: string
+        notes: &id011
+          type: string
+        reference: &id012
+          type: string
+        visible: &id013
+          type: boolean
+        enabled: &id014
+          type: boolean
+        expiresAt: &id015
+          type: string
+          format: date-time
+        price: &id016
+          type: number
+          format: float
+        discount: &id017
+          type: number
+          format: float
+        ownerId: &id018
+          type: string
+          format: uuid
+        organizationId: &id019
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ConfigList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Config'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateConfigRequest:
+      type: object
+      properties:
+        code: *id010
+        notes: *id011
+        reference: *id012
+        visible: *id013
+        enabled: *id014
+        expiresAt: *id015
+        price: *id016
+        discount: *id017
+        ownerId: *id018
+        organizationId: *id019
+      required:
+      - code
+      - notes
+    UpdateConfigRequest:
+      type: object
+      properties:
+        code: *id010
+        notes: *id011
+        reference: *id012
+        visible: *id013
+        enabled: *id014
+        expiresAt: *id015
+        price: *id016
+        discount: *id017
+        ownerId: *id018
+        organizationId: *id019
+      required:
+      - code
+      - notes
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

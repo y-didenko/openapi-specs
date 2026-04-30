@@ -1,0 +1,922 @@
+openapi: 3.0.3
+info:
+  title: Feature Flags API
+  description: Runtime feature flag toggles.
+  version: 1.3.4
+  contact:
+    name: Feature Flags Team
+    email: featureflags@example.com
+servers:
+- url: https://api.example.com/feature-flags/v1
+  description: Production
+- url: https://staging-api.example.com/feature-flags/v1
+  description: Staging
+tags:
+- name: Feature Flags
+  description: Feature Flags resource operations.
+- name: Configs
+  description: Configs resource operations.
+- name: Links
+  description: Links resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /feature-flags:
+    get:
+      tags:
+      - Feature Flags
+      summary: List feature flags
+      operationId: listFeatureFlag
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of feature flags.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlagList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Feature Flags
+      summary: Create feature flag
+      operationId: createFeatureFlag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFeatureFlagRequest'
+      responses:
+        '201':
+          description: Feature Flag created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlag'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /feature-flags/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Feature Flags
+      summary: Get feature flag by ID
+      operationId: getFeatureFlag
+      responses:
+        '200':
+          description: Feature Flag details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlag'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Feature Flags
+      summary: Update feature flag
+      operationId: updateFeatureFlag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFeatureFlagRequest'
+      responses:
+        '200':
+          description: Feature Flag updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlag'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Feature Flags
+      summary: Delete feature flag
+      operationId: deleteFeatureFlag
+      responses:
+        '204':
+          description: Feature Flag deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /feature-flags/bulk:
+    post:
+      tags:
+      - Feature Flags
+      summary: Bulk create feature flags
+      operationId: bulkCreateFeatureFlag
+      description: Create up to 500 records in a single request. Returns per-row results.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  maxItems: 500
+                  items:
+                    $ref: '#/components/schemas/CreateFeatureFlagRequest'
+              required:
+              - items
+      responses:
+        '200':
+          description: Bulk operation results.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  succeeded:
+                    type: integer
+                  failed:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        index:
+                          type: integer
+                        id:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        error:
+                          type: string
+                          nullable: true
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Feature Flags
+      summary: Bulk delete feature flags
+      operationId: bulkDeleteFeatureFlag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+              required:
+              - ids
+      responses:
+        '200':
+          description: Deletion summary.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: integer
+                  skipped:
+                    type: integer
+      security:
+      - bearerAuth: []
+  /configs:
+    get:
+      tags:
+      - Configs
+      summary: List configs
+      operationId: listConfig
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of configs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Configs
+      summary: Create config
+      operationId: createConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConfigRequest'
+      responses:
+        '201':
+          description: Config created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /configs/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Configs
+      summary: Get config by ID
+      operationId: getConfig
+      responses:
+        '200':
+          description: Config details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Configs
+      summary: Update config
+      operationId: updateConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateConfigRequest'
+      responses:
+        '200':
+          description: Config updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Configs
+      summary: Delete config
+      operationId: deleteConfig
+      responses:
+        '204':
+          description: Config deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /configs/search:
+    post:
+      tags:
+      - Configs
+      summary: Advanced search across configs
+      operationId: searchConfig
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigList'
+      security:
+      - bearerAuth: []
+  /links:
+    get:
+      tags:
+      - Links
+      summary: List links
+      operationId: listLink
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of links.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Links
+      summary: Create link
+      operationId: createLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLinkRequest'
+      responses:
+        '201':
+          description: Link created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /links/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Links
+      summary: Get link by ID
+      operationId: getLink
+      responses:
+        '200':
+          description: Link details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Links
+      summary: Update link
+      operationId: updateLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLinkRequest'
+      responses:
+        '200':
+          description: Link updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Links
+      summary: Delete link
+      operationId: deleteLink
+      responses:
+        '204':
+          description: Link deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    FeatureFlag:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+        slug: &id001
+          type: string
+        summary: &id002
+          type: string
+        notes: &id003
+          type: string
+        priority: &id004
+          type: integer
+        locked: &id005
+          type: boolean
+        archived: &id006
+          type: boolean
+        completedAt: &id007
+          type: string
+          format: date-time
+        endDate: &id008
+          type: string
+          format: date
+        discount: &id009
+          type: number
+          format: float
+        createdBy: &id010
+          type: string
+          format: uuid
+        organizationId: &id011
+          type: string
+          format: uuid
+        phone: &id012
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    FeatureFlagList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeatureFlag'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateFeatureFlagRequest:
+      type: object
+      properties:
+        slug: *id001
+        summary: *id002
+        notes: *id003
+        priority: *id004
+        locked: *id005
+        archived: *id006
+        completedAt: *id007
+        endDate: *id008
+        discount: *id009
+        createdBy: *id010
+        organizationId: *id011
+        phone: *id012
+      required:
+      - slug
+      - summary
+    UpdateFeatureFlagRequest:
+      type: object
+      properties:
+        slug: *id001
+        summary: *id002
+        notes: *id003
+        priority: *id004
+        locked: *id005
+        archived: *id006
+        completedAt: *id007
+        endDate: *id008
+        discount: *id009
+        createdBy: *id010
+        organizationId: *id011
+        phone: *id012
+      required:
+      - slug
+      - summary
+    Config:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+        name: &id013
+          type: string
+        displayName: &id014
+          type: string
+        rank: &id015
+          type: integer
+        locked: &id016
+          type: boolean
+        scheduledAt: &id017
+          type: string
+          format: date-time
+        lastSeenAt: &id018
+          type: string
+          format: date-time
+        price: &id019
+          type: number
+          format: float
+        createdBy: &id020
+          type: string
+          format: uuid
+        tagId: &id021
+          type: string
+          format: uuid
+        phone: &id022
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ConfigList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Config'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateConfigRequest:
+      type: object
+      properties:
+        name: *id013
+        displayName: *id014
+        rank: *id015
+        locked: *id016
+        scheduledAt: *id017
+        lastSeenAt: *id018
+        price: *id019
+        createdBy: *id020
+        tagId: *id021
+        phone: *id022
+      required:
+      - name
+      - displayName
+    UpdateConfigRequest:
+      type: object
+      properties:
+        name: *id013
+        displayName: *id014
+        rank: *id015
+        locked: *id016
+        scheduledAt: *id017
+        lastSeenAt: *id018
+        price: *id019
+        createdBy: *id020
+        tagId: *id021
+        phone: *id022
+      required:
+      - name
+      - displayName
+    Link:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        title: &id023
+          type: string
+        slug: &id024
+          type: string
+        score: &id025
+          type: number
+          format: float
+        threshold: &id026
+          type: number
+          format: float
+        locked: &id027
+          type: boolean
+        verified: &id028
+          type: boolean
+        expiresAt: &id029
+          type: string
+          format: date-time
+        teamId: &id030
+          type: string
+          format: uuid
+        websiteUrl: &id031
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LinkList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLinkRequest:
+      type: object
+      properties:
+        title: *id023
+        slug: *id024
+        score: *id025
+        threshold: *id026
+        locked: *id027
+        verified: *id028
+        expiresAt: *id029
+        teamId: *id030
+        websiteUrl: *id031
+      required:
+      - title
+      - slug
+    UpdateLinkRequest:
+      type: object
+      properties:
+        title: *id023
+        slug: *id024
+        score: *id025
+        threshold: *id026
+        locked: *id027
+        verified: *id028
+        expiresAt: *id029
+        teamId: *id030
+        websiteUrl: *id031
+      required:
+      - title
+      - slug
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

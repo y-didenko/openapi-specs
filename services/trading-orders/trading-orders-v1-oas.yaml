@@ -1,0 +1,302 @@
+openapi: 3.0.3
+info:
+  title: Trading Orders API
+  description: Trading order management.
+  version: 1.1.0
+  contact:
+    name: Trading Orders Team
+    email: tradingorders@example.com
+servers:
+- url: https://api.example.com/trading-orders/v1
+  description: Production
+- url: https://staging-api.example.com/trading-orders/v1
+  description: Staging
+tags:
+- name: Trading Orders
+  description: Trading Orders resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /trading-orders:
+    get:
+      tags:
+      - Trading Orders
+      summary: List trading orders
+      operationId: listTradingOrder
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of trading orders.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradingOrderList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Trading Orders
+      summary: Create trading order
+      operationId: createTradingOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTradingOrderRequest'
+      responses:
+        '201':
+          description: Trading Order created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradingOrder'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /trading-orders/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Trading Orders
+      summary: Get trading order by ID
+      operationId: getTradingOrder
+      responses:
+        '200':
+          description: Trading Order details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradingOrder'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Trading Orders
+      summary: Update trading order
+      operationId: updateTradingOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTradingOrderRequest'
+      responses:
+        '200':
+          description: Trading Order updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradingOrder'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Trading Orders
+      summary: Delete trading order
+      operationId: deleteTradingOrder
+      responses:
+        '204':
+          description: Trading Order deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    TradingOrder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - active
+          - inactive
+          - archived
+        description: &id001
+          type: string
+        displayName: &id002
+          type: string
+        reference: &id003
+          type: string
+        enabled: &id004
+          type: boolean
+        expiresAt: &id005
+          type: string
+          format: date-time
+        startDate: &id006
+          type: string
+          format: date
+        price: &id007
+          type: number
+          format: float
+        parentId: &id008
+          type: string
+          format: uuid
+        phone: &id009
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    TradingOrderList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TradingOrder'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateTradingOrderRequest:
+      type: object
+      properties:
+        description: *id001
+        displayName: *id002
+        reference: *id003
+        enabled: *id004
+        expiresAt: *id005
+        startDate: *id006
+        price: *id007
+        parentId: *id008
+        phone: *id009
+      required:
+      - description
+      - displayName
+    UpdateTradingOrderRequest:
+      type: object
+      properties:
+        description: *id001
+        displayName: *id002
+        reference: *id003
+        enabled: *id004
+        expiresAt: *id005
+        startDate: *id006
+        price: *id007
+        parentId: *id008
+        phone: *id009
+      required:
+      - description
+      - displayName
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

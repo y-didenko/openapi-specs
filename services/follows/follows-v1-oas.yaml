@@ -1,0 +1,571 @@
+openapi: 3.0.3
+info:
+  title: Follows API
+  description: Follow relationships.
+  version: 1.1.0
+  contact:
+    name: Follows Team
+    email: follows@example.com
+servers:
+- url: https://api.example.com/follows/v1
+  description: Production
+- url: https://staging-api.example.com/follows/v1
+  description: Staging
+tags:
+- name: Follows
+  description: Follows resource operations.
+- name: Templates
+  description: Templates resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /follows:
+    get:
+      tags:
+      - Follows
+      summary: List follows
+      operationId: listFollow
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of follows.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FollowList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Follows
+      summary: Create follow
+      operationId: createFollow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFollowRequest'
+      responses:
+        '201':
+          description: Follow created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Follow'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /follows/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Follows
+      summary: Get follow by ID
+      operationId: getFollow
+      responses:
+        '200':
+          description: Follow details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Follow'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Follows
+      summary: Update follow
+      operationId: updateFollow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFollowRequest'
+      responses:
+        '200':
+          description: Follow updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Follow'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Follows
+      summary: Delete follow
+      operationId: deleteFollow
+      responses:
+        '204':
+          description: Follow deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /follows/search:
+    post:
+      tags:
+      - Follows
+      summary: Advanced search across follows
+      operationId: searchFollow
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FollowList'
+      security:
+      - bearerAuth: []
+  /templates:
+    get:
+      tags:
+      - Templates
+      summary: List templates
+      operationId: listTemplate
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of templates.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Templates
+      summary: Create template
+      operationId: createTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTemplateRequest'
+      responses:
+        '201':
+          description: Template created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /templates/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Templates
+      summary: Get template by ID
+      operationId: getTemplate
+      responses:
+        '200':
+          description: Template details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Templates
+      summary: Update template
+      operationId: updateTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTemplateRequest'
+      responses:
+        '200':
+          description: Template updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Templates
+      summary: Delete template
+      operationId: deleteTemplate
+      responses:
+        '204':
+          description: Template deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Follow:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        summary: &id001
+          type: string
+        reference: &id002
+          type: string
+        count: &id003
+          type: integer
+        archived: &id004
+          type: boolean
+        visible: &id005
+          type: boolean
+        expiresAt: &id006
+          type: string
+          format: date-time
+        price: &id007
+          type: number
+          format: float
+        teamId: &id008
+          type: string
+          format: uuid
+        websiteUrl: &id009
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    FollowList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Follow'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateFollowRequest:
+      type: object
+      properties:
+        summary: *id001
+        reference: *id002
+        count: *id003
+        archived: *id004
+        visible: *id005
+        expiresAt: *id006
+        price: *id007
+        teamId: *id008
+        websiteUrl: *id009
+      required:
+      - summary
+      - reference
+    UpdateFollowRequest:
+      type: object
+      properties:
+        summary: *id001
+        reference: *id002
+        count: *id003
+        archived: *id004
+        visible: *id005
+        expiresAt: *id006
+        price: *id007
+        teamId: *id008
+        websiteUrl: *id009
+      required:
+      - summary
+      - reference
+    Template:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+        title: &id010
+          type: string
+        description: &id011
+          type: string
+        rank: &id012
+          type: integer
+        enabled: &id013
+          type: boolean
+        startDate: &id014
+          type: string
+          format: date
+        dueDate: &id015
+          type: string
+          format: date
+        teamId: &id016
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    TemplateList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Template'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateTemplateRequest:
+      type: object
+      properties:
+        title: *id010
+        description: *id011
+        rank: *id012
+        enabled: *id013
+        startDate: *id014
+        dueDate: *id015
+        teamId: *id016
+      required:
+      - title
+      - description
+    UpdateTemplateRequest:
+      type: object
+      properties:
+        title: *id010
+        description: *id011
+        rank: *id012
+        enabled: *id013
+        startDate: *id014
+        dueDate: *id015
+        teamId: *id016
+      required:
+      - title
+      - description
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

@@ -1,0 +1,621 @@
+openapi: 3.0.3
+info:
+  title: Broadcasts API
+  description: Bulk announcement broadcasts.
+  version: 2.0.0
+  contact:
+    name: Broadcasts Team
+    email: broadcasts@example.com
+servers:
+- url: https://api.example.com/broadcasts/v1
+  description: Production
+- url: https://staging-api.example.com/broadcasts/v1
+  description: Staging
+tags:
+- name: Broadcasts
+  description: Broadcasts resource operations.
+- name: Imports
+  description: Imports resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /broadcasts:
+    get:
+      tags:
+      - Broadcasts
+      summary: List broadcasts
+      operationId: listBroadcast
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of broadcasts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BroadcastList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Broadcasts
+      summary: Create broadcast
+      operationId: createBroadcast
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBroadcastRequest'
+      responses:
+        '201':
+          description: Broadcast created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Broadcast'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /broadcasts/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Broadcasts
+      summary: Get broadcast by ID
+      operationId: getBroadcast
+      responses:
+        '200':
+          description: Broadcast details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Broadcast'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Broadcasts
+      summary: Update broadcast
+      operationId: updateBroadcast
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBroadcastRequest'
+      responses:
+        '200':
+          description: Broadcast updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Broadcast'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Broadcasts
+      summary: Delete broadcast
+      operationId: deleteBroadcast
+      responses:
+        '204':
+          description: Broadcast deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /broadcasts/search:
+    post:
+      tags:
+      - Broadcasts
+      summary: Advanced search across broadcasts
+      operationId: searchBroadcast
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BroadcastList'
+      security:
+      - bearerAuth: []
+  /imports:
+    get:
+      tags:
+      - Imports
+      summary: List imports
+      operationId: listImport
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of imports.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Imports
+      summary: Create import
+      operationId: createImport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateImportRequest'
+      responses:
+        '201':
+          description: Import created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /imports/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Imports
+      summary: Get import by ID
+      operationId: getImport
+      responses:
+        '200':
+          description: Import details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Imports
+      summary: Update import
+      operationId: updateImport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateImportRequest'
+      responses:
+        '200':
+          description: Import updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Imports
+      summary: Delete import
+      operationId: deleteImport
+      responses:
+        '204':
+          description: Import deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    Broadcast:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - active
+          - inactive
+          - archived
+        description: &id001
+          type: string
+        externalId: &id002
+          type: string
+        notes: &id003
+          type: string
+        threshold: &id004
+          type: number
+          format: float
+        count: &id005
+          type: integer
+        verified: &id006
+          type: boolean
+        expiresAt: &id007
+          type: string
+          format: date-time
+        lastSeenAt: &id008
+          type: string
+          format: date-time
+        price: &id009
+          type: number
+          format: float
+        parentId: &id010
+          type: string
+          format: uuid
+        websiteUrl: &id011
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    BroadcastList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Broadcast'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateBroadcastRequest:
+      type: object
+      properties:
+        description: *id001
+        externalId: *id002
+        notes: *id003
+        threshold: *id004
+        count: *id005
+        verified: *id006
+        expiresAt: *id007
+        lastSeenAt: *id008
+        price: *id009
+        parentId: *id010
+        websiteUrl: *id011
+      required:
+      - description
+      - externalId
+    UpdateBroadcastRequest:
+      type: object
+      properties:
+        description: *id001
+        externalId: *id002
+        notes: *id003
+        threshold: *id004
+        count: *id005
+        verified: *id006
+        expiresAt: *id007
+        lastSeenAt: *id008
+        price: *id009
+        parentId: *id010
+        websiteUrl: *id011
+      required:
+      - description
+      - externalId
+    Import:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        notes: &id012
+          type: string
+        description: &id013
+          type: string
+        priority: &id014
+          type: integer
+        archived: &id015
+          type: boolean
+        dueDate: &id016
+          type: string
+          format: date
+        scheduledAt: &id017
+          type: string
+          format: date-time
+        discount: &id018
+          type: number
+          format: float
+        teamId: &id019
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ImportList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Import'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateImportRequest:
+      type: object
+      properties:
+        notes: *id012
+        description: *id013
+        priority: *id014
+        archived: *id015
+        dueDate: *id016
+        scheduledAt: *id017
+        discount: *id018
+        teamId: *id019
+      required:
+      - notes
+      - description
+    UpdateImportRequest:
+      type: object
+      properties:
+        notes: *id012
+        description: *id013
+        priority: *id014
+        archived: *id015
+        dueDate: *id016
+        scheduledAt: *id017
+        discount: *id018
+        teamId: *id019
+      required:
+      - notes
+      - description
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

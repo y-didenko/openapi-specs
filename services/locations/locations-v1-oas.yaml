@@ -1,0 +1,326 @@
+openapi: 3.0.3
+info:
+  title: Locations API
+  description: Physical location registry.
+  version: 1.1.0
+  contact:
+    name: Locations Team
+    email: locations@example.com
+servers:
+- url: https://api.example.com/locations/v1
+  description: Production
+- url: https://staging-api.example.com/locations/v1
+  description: Staging
+tags:
+- name: Locations
+  description: Locations resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /locations:
+    get:
+      tags:
+      - Locations
+      summary: List locations
+      operationId: listLocation
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of locations.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Locations
+      summary: Create location
+      operationId: createLocation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLocationRequest'
+      responses:
+        '201':
+          description: Location created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /locations/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Locations
+      summary: Get location by ID
+      operationId: getLocation
+      responses:
+        '200':
+          description: Location details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Locations
+      summary: Update location
+      operationId: updateLocation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLocationRequest'
+      responses:
+        '200':
+          description: Location updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Locations
+      summary: Delete location
+      operationId: deleteLocation
+      responses:
+        '204':
+          description: Location deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Location:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        name: &id001
+          type: string
+        slug: &id002
+          type: string
+        notes: &id003
+          type: string
+        weight: &id004
+          type: number
+          format: float
+        position: &id005
+          type: integer
+        archived: &id006
+          type: boolean
+        locked: &id007
+          type: boolean
+        publishedAt: &id008
+          type: string
+          format: date-time
+        endDate: &id009
+          type: string
+          format: date
+        amount: &id010
+          type: number
+          format: float
+        price: &id011
+          type: number
+          format: float
+        teamId: &id012
+          type: string
+          format: uuid
+        updatedBy: &id013
+          type: string
+          format: uuid
+        phone: &id014
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LocationList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Location'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLocationRequest:
+      type: object
+      properties:
+        name: *id001
+        slug: *id002
+        notes: *id003
+        weight: *id004
+        position: *id005
+        archived: *id006
+        locked: *id007
+        publishedAt: *id008
+        endDate: *id009
+        amount: *id010
+        price: *id011
+        teamId: *id012
+        updatedBy: *id013
+        phone: *id014
+      required:
+      - name
+      - slug
+    UpdateLocationRequest:
+      type: object
+      properties:
+        name: *id001
+        slug: *id002
+        notes: *id003
+        weight: *id004
+        position: *id005
+        archived: *id006
+        locked: *id007
+        publishedAt: *id008
+        endDate: *id009
+        amount: *id010
+        price: *id011
+        teamId: *id012
+        updatedBy: *id013
+        phone: *id014
+      required:
+      - name
+      - slug
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

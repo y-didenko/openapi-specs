@@ -1,0 +1,518 @@
+openapi: 3.0.3
+info:
+  title: Opportunities API
+  description: Sales opportunity pipeline.
+  version: 1.1.0
+  contact:
+    name: Opportunities Team
+    email: opportunities@example.com
+servers:
+- url: https://api.example.com/opportunities/v1
+  description: Production
+- url: https://staging-api.example.com/opportunities/v1
+  description: Staging
+tags:
+- name: Opportunities
+  description: Opportunities resource operations.
+- name: Rules
+  description: Rules resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /opportunities:
+    get:
+      tags:
+      - Opportunities
+      summary: List opportunities
+      operationId: listOpportunity
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of opportunities.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpportunityList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Opportunities
+      summary: Create opportunity
+      operationId: createOpportunity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOpportunityRequest'
+      responses:
+        '201':
+          description: Opportunity created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Opportunity'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /opportunities/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Opportunities
+      summary: Get opportunity by ID
+      operationId: getOpportunity
+      responses:
+        '200':
+          description: Opportunity details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Opportunity'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Opportunities
+      summary: Update opportunity
+      operationId: updateOpportunity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOpportunityRequest'
+      responses:
+        '200':
+          description: Opportunity updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Opportunity'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Opportunities
+      summary: Delete opportunity
+      operationId: deleteOpportunity
+      responses:
+        '204':
+          description: Opportunity deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /rules:
+    get:
+      tags:
+      - Rules
+      summary: List rules
+      operationId: listRule
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of rules.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Rules
+      summary: Create rule
+      operationId: createRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRuleRequest'
+      responses:
+        '201':
+          description: Rule created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /rules/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Rules
+      summary: Get rule by ID
+      operationId: getRule
+      responses:
+        '200':
+          description: Rule details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Rules
+      summary: Update rule
+      operationId: updateRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRuleRequest'
+      responses:
+        '200':
+          description: Rule updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Rules
+      summary: Delete rule
+      operationId: deleteRule
+      responses:
+        '204':
+          description: Rule deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Opportunity:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        displayName: &id001
+          type: string
+        slug: &id002
+          type: string
+        rank: &id003
+          type: integer
+        visible: &id004
+          type: boolean
+        dueDate: &id005
+          type: string
+          format: date
+        publishedAt: &id006
+          type: string
+          format: date-time
+        teamId: &id007
+          type: string
+          format: uuid
+        organizationId: &id008
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    OpportunityList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Opportunity'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateOpportunityRequest:
+      type: object
+      properties:
+        displayName: *id001
+        slug: *id002
+        rank: *id003
+        visible: *id004
+        dueDate: *id005
+        publishedAt: *id006
+        teamId: *id007
+        organizationId: *id008
+      required:
+      - displayName
+      - slug
+    UpdateOpportunityRequest:
+      type: object
+      properties:
+        displayName: *id001
+        slug: *id002
+        rank: *id003
+        visible: *id004
+        dueDate: *id005
+        publishedAt: *id006
+        teamId: *id007
+        organizationId: *id008
+      required:
+      - displayName
+      - slug
+    Rule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        displayName: &id009
+          type: string
+        summary: &id010
+          type: string
+        reference: &id011
+          type: string
+        rank: &id012
+          type: integer
+        threshold: &id013
+          type: number
+          format: float
+        verified: &id014
+          type: boolean
+        active: &id015
+          type: boolean
+        dueDate: &id016
+          type: string
+          format: date
+        total: &id017
+          type: number
+          format: float
+        organizationId: &id018
+          type: string
+          format: uuid
+        updatedBy: &id019
+          type: string
+          format: uuid
+        phone: &id020
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    RuleList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Rule'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateRuleRequest:
+      type: object
+      properties:
+        displayName: *id009
+        summary: *id010
+        reference: *id011
+        rank: *id012
+        threshold: *id013
+        verified: *id014
+        active: *id015
+        dueDate: *id016
+        total: *id017
+        organizationId: *id018
+        updatedBy: *id019
+        phone: *id020
+      required:
+      - displayName
+      - summary
+    UpdateRuleRequest:
+      type: object
+      properties:
+        displayName: *id009
+        summary: *id010
+        reference: *id011
+        rank: *id012
+        threshold: *id013
+        verified: *id014
+        active: *id015
+        dueDate: *id016
+        total: *id017
+        organizationId: *id018
+        updatedBy: *id019
+        phone: *id020
+      required:
+      - displayName
+      - summary
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

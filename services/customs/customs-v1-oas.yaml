@@ -1,0 +1,1020 @@
+openapi: 3.0.3
+info:
+  title: Customs API
+  description: Customs declarations and HS codes.
+  version: 2.0.0
+  contact:
+    name: Customs Team
+    email: customs@example.com
+servers:
+- url: https://api.example.com/customs/v1
+  description: Production
+- url: https://staging-api.example.com/customs/v1
+  description: Staging
+tags:
+- name: Customs
+  description: Customs resource operations.
+- name: Templates
+  description: Templates resource operations.
+- name: Exports
+  description: Exports resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /customs:
+    get:
+      tags:
+      - Customs
+      summary: List customs
+      operationId: listCustom
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of customs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Customs
+      summary: Create custom
+      operationId: createCustom
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomRequest'
+      responses:
+        '201':
+          description: Custom created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Custom'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /customs/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Customs
+      summary: Get custom by ID
+      operationId: getCustom
+      responses:
+        '200':
+          description: Custom details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Custom'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Customs
+      summary: Update custom
+      operationId: updateCustom
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCustomRequest'
+      responses:
+        '200':
+          description: Custom updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Custom'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Customs
+      summary: Delete custom
+      operationId: deleteCustom
+      responses:
+        '204':
+          description: Custom deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /customs/{id}/start:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - Customs
+      summary: Start custom
+      operationId: startCustom
+      description: Transitions the record to the start state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Custom'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /customs/{id}/complete:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - Customs
+      summary: Complete custom
+      operationId: completeCustom
+      description: Transitions the record to the complete state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Custom'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /customs/{id}/cancel:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - Customs
+      summary: Cancel custom
+      operationId: cancelCustom
+      description: Transitions the record to the cancel state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Custom'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /customs/stats:
+    get:
+      tags:
+      - Customs
+      summary: Aggregate customs stats
+      operationId: getCustomStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /templates:
+    get:
+      tags:
+      - Templates
+      summary: List templates
+      operationId: listTemplate
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of templates.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Templates
+      summary: Create template
+      operationId: createTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTemplateRequest'
+      responses:
+        '201':
+          description: Template created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /templates/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Templates
+      summary: Get template by ID
+      operationId: getTemplate
+      responses:
+        '200':
+          description: Template details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Templates
+      summary: Update template
+      operationId: updateTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTemplateRequest'
+      responses:
+        '200':
+          description: Template updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Templates
+      summary: Delete template
+      operationId: deleteTemplate
+      responses:
+        '204':
+          description: Template deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /templates/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Templates
+      summary: Get audit trail
+      operationId: getTemplateAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /exports:
+    get:
+      tags:
+      - Exports
+      summary: List exports
+      operationId: listExport
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of exports.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Exports
+      summary: Create export
+      operationId: createExport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExportRequest'
+      responses:
+        '201':
+          description: Export created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Export'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /exports/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Exports
+      summary: Get export by ID
+      operationId: getExport
+      responses:
+        '200':
+          description: Export details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Export'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Exports
+      summary: Update export
+      operationId: updateExport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExportRequest'
+      responses:
+        '200':
+          description: Export updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Export'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Exports
+      summary: Delete export
+      operationId: deleteExport
+      responses:
+        '204':
+          description: Export deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /exports/stats:
+    get:
+      tags:
+      - Exports
+      summary: Aggregate exports stats
+      operationId: getExportStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    Custom:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        slug: &id001
+          type: string
+        name: &id002
+          type: string
+        default: &id003
+          type: boolean
+        visible: &id004
+          type: boolean
+        endDate: &id005
+          type: string
+          format: date
+        scheduledAt: &id006
+          type: string
+          format: date-time
+        currency: &id007
+          type: string
+        createdBy: &id008
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    CustomList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Custom'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateCustomRequest:
+      type: object
+      properties:
+        slug: *id001
+        name: *id002
+        default: *id003
+        visible: *id004
+        endDate: *id005
+        scheduledAt: *id006
+        currency: *id007
+        createdBy: *id008
+      required:
+      - slug
+      - name
+    UpdateCustomRequest:
+      type: object
+      properties:
+        slug: *id001
+        name: *id002
+        default: *id003
+        visible: *id004
+        endDate: *id005
+        scheduledAt: *id006
+        currency: *id007
+        createdBy: *id008
+      required:
+      - slug
+      - name
+    Template:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - scheduled
+          - running
+          - completed
+          - failed
+        code: &id009
+          type: string
+        reference: &id010
+          type: string
+        position: &id011
+          type: integer
+        active: &id012
+          type: boolean
+        visible: &id013
+          type: boolean
+        scheduledAt: &id014
+          type: string
+          format: date-time
+        ownerId: &id015
+          type: string
+          format: uuid
+        websiteUrl: &id016
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    TemplateList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Template'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateTemplateRequest:
+      type: object
+      properties:
+        code: *id009
+        reference: *id010
+        position: *id011
+        active: *id012
+        visible: *id013
+        scheduledAt: *id014
+        ownerId: *id015
+        websiteUrl: *id016
+      required:
+      - code
+      - reference
+    UpdateTemplateRequest:
+      type: object
+      properties:
+        code: *id009
+        reference: *id010
+        position: *id011
+        active: *id012
+        visible: *id013
+        scheduledAt: *id014
+        ownerId: *id015
+        websiteUrl: *id016
+      required:
+      - code
+      - reference
+    Export:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        displayName: &id017
+          type: string
+        notes: &id018
+          type: string
+        weight: &id019
+          type: number
+          format: float
+        rank: &id020
+          type: integer
+        enabled: &id021
+          type: boolean
+        archived: &id022
+          type: boolean
+        expiresAt: &id023
+          type: string
+          format: date-time
+        updatedBy: &id024
+          type: string
+          format: uuid
+        websiteUrl: &id025
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ExportList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Export'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateExportRequest:
+      type: object
+      properties:
+        displayName: *id017
+        notes: *id018
+        weight: *id019
+        rank: *id020
+        enabled: *id021
+        archived: *id022
+        expiresAt: *id023
+        updatedBy: *id024
+        websiteUrl: *id025
+      required:
+      - displayName
+      - notes
+    UpdateExportRequest:
+      type: object
+      properties:
+        displayName: *id017
+        notes: *id018
+        weight: *id019
+        rank: *id020
+        enabled: *id021
+        archived: *id022
+        expiresAt: *id023
+        updatedBy: *id024
+        websiteUrl: *id025
+      required:
+      - displayName
+      - notes
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

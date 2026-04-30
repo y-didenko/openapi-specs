@@ -1,0 +1,576 @@
+openapi: 3.0.3
+info:
+  title: Trades API
+  description: Trade execution records.
+  version: 2.0.0
+  contact:
+    name: Trades Team
+    email: trades@example.com
+servers:
+- url: https://api.example.com/trades/v1
+  description: Production
+- url: https://staging-api.example.com/trades/v1
+  description: Staging
+tags:
+- name: Trades
+  description: Trades resource operations.
+- name: Logs
+  description: Logs resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /trades:
+    get:
+      tags:
+      - Trades
+      summary: List trades
+      operationId: listTrade
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of trades.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradeList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Trades
+      summary: Create trade
+      operationId: createTrade
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTradeRequest'
+      responses:
+        '201':
+          description: Trade created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trade'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /trades/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Trades
+      summary: Get trade by ID
+      operationId: getTrade
+      responses:
+        '200':
+          description: Trade details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trade'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Trades
+      summary: Update trade
+      operationId: updateTrade
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTradeRequest'
+      responses:
+        '200':
+          description: Trade updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trade'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Trades
+      summary: Delete trade
+      operationId: deleteTrade
+      responses:
+        '204':
+          description: Trade deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /trades/search:
+    post:
+      tags:
+      - Trades
+      summary: Advanced search across trades
+      operationId: searchTrade
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradeList'
+      security:
+      - bearerAuth: []
+  /logs:
+    get:
+      tags:
+      - Logs
+      summary: List logs
+      operationId: listLog
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of logs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Logs
+      summary: Create log
+      operationId: createLog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLogRequest'
+      responses:
+        '201':
+          description: Log created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Log'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /logs/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Logs
+      summary: Get log by ID
+      operationId: getLog
+      responses:
+        '200':
+          description: Log details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Log'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Logs
+      summary: Update log
+      operationId: updateLog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLogRequest'
+      responses:
+        '200':
+          description: Log updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Log'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Logs
+      summary: Delete log
+      operationId: deleteLog
+      responses:
+        '204':
+          description: Log deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Trade:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        code: &id001
+          type: string
+        description: &id002
+          type: string
+        default: &id003
+          type: boolean
+        dueDate: &id004
+          type: string
+          format: date
+        price: &id005
+          type: number
+          format: float
+        discount: &id006
+          type: number
+          format: float
+        ownerId: &id007
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    TradeList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Trade'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateTradeRequest:
+      type: object
+      properties:
+        code: *id001
+        description: *id002
+        default: *id003
+        dueDate: *id004
+        price: *id005
+        discount: *id006
+        ownerId: *id007
+      required:
+      - code
+      - description
+    UpdateTradeRequest:
+      type: object
+      properties:
+        code: *id001
+        description: *id002
+        default: *id003
+        dueDate: *id004
+        price: *id005
+        discount: *id006
+        ownerId: *id007
+      required:
+      - code
+      - description
+    Log:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        externalId: &id008
+          type: string
+        code: &id009
+          type: string
+        default: &id010
+          type: boolean
+        visible: &id011
+          type: boolean
+        publishedAt: &id012
+          type: string
+          format: date-time
+        price: &id013
+          type: number
+          format: float
+        organizationId: &id014
+          type: string
+          format: uuid
+        tagId: &id015
+          type: string
+          format: uuid
+        email: &id016
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LogList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Log'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLogRequest:
+      type: object
+      properties:
+        externalId: *id008
+        code: *id009
+        default: *id010
+        visible: *id011
+        publishedAt: *id012
+        price: *id013
+        organizationId: *id014
+        tagId: *id015
+        email: *id016
+      required:
+      - externalId
+      - code
+    UpdateLogRequest:
+      type: object
+      properties:
+        externalId: *id008
+        code: *id009
+        default: *id010
+        visible: *id011
+        publishedAt: *id012
+        price: *id013
+        organizationId: *id014
+        tagId: *id015
+        email: *id016
+      required:
+      - externalId
+      - code
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

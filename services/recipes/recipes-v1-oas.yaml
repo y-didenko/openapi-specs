@@ -1,0 +1,2818 @@
+openapi: 3.0.3
+info:
+  title: Recipes API
+  description: Recipe library.
+  version: 2.1.0
+  contact:
+    name: Recipes Team
+    email: recipes@example.com
+servers:
+- url: https://api.example.com/recipes/v1
+  description: Production
+- url: https://staging-api.example.com/recipes/v1
+  description: Staging
+tags:
+- name: Recipes
+  description: Recipes resource operations.
+- name: Events
+  description: Events resource operations.
+- name: Rules
+  description: Rules resource operations.
+- name: Labels
+  description: Labels resource operations.
+- name: Alerts
+  description: Alerts resource operations.
+- name: Links
+  description: Links resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /recipes:
+    get:
+      tags:
+      - Recipes
+      summary: List recipes
+      operationId: listRecipe
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of recipes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Returns a paginated list of recipes. Supports status and free-text filters.
+    post:
+      tags:
+      - Recipes
+      summary: Create recipe
+      operationId: createRecipe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRecipeRequest'
+      responses:
+        '201':
+          description: Recipe created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recipe'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Creates a new recipe record.
+  /recipes/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Recipes
+      summary: Get recipe by ID
+      operationId: getRecipe
+      responses:
+        '200':
+          description: Recipe details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recipe'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Recipes
+      summary: Update recipe
+      operationId: updateRecipe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRecipeRequest'
+      responses:
+        '200':
+          description: Recipe updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recipe'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Recipes
+      summary: Delete recipe
+      operationId: deleteRecipe
+      responses:
+        '204':
+          description: Recipe deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /recipes/{id}/attachments:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Recipes
+      summary: List attachments
+      operationId: listRecipeAttachments
+      responses:
+        '200':
+          description: Attachments list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Attachment'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Recipes
+      summary: Upload attachment
+      operationId: uploadRecipeAttachment
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                description:
+                  type: string
+              required:
+              - file
+      responses:
+        '201':
+          description: Attachment created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+      security:
+      - bearerAuth: []
+  /recipes/search:
+    post:
+      tags:
+      - Recipes
+      summary: Advanced search across recipes
+      operationId: searchRecipe
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeList'
+      security:
+      - bearerAuth: []
+  /recipes/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Recipes
+      summary: Get audit trail
+      operationId: getRecipeAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /recipes/bulk:
+    post:
+      tags:
+      - Recipes
+      summary: Bulk create recipes
+      operationId: bulkCreateRecipe
+      description: Create up to 500 records in a single request. Returns per-row results.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  maxItems: 500
+                  items:
+                    $ref: '#/components/schemas/CreateRecipeRequest'
+              required:
+              - items
+      responses:
+        '200':
+          description: Bulk operation results.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  succeeded:
+                    type: integer
+                  failed:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        index:
+                          type: integer
+                        id:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        error:
+                          type: string
+                          nullable: true
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Recipes
+      summary: Bulk delete recipes
+      operationId: bulkDeleteRecipe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+              required:
+              - ids
+      responses:
+        '200':
+          description: Deletion summary.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: integer
+                  skipped:
+                    type: integer
+      security:
+      - bearerAuth: []
+  /recipes/stats:
+    get:
+      tags:
+      - Recipes
+      summary: Aggregate recipes stats
+      operationId: getRecipeStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /events:
+    get:
+      tags:
+      - Events
+      summary: List events
+      operationId: listEvent
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of events.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Returns a paginated list of events. Supports status and free-text filters.
+    post:
+      tags:
+      - Events
+      summary: Create event
+      operationId: createEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventRequest'
+      responses:
+        '201':
+          description: Event created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Creates a new event record.
+  /events/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Events
+      summary: Get event by ID
+      operationId: getEvent
+      responses:
+        '200':
+          description: Event details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Events
+      summary: Update event
+      operationId: updateEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEventRequest'
+      responses:
+        '200':
+          description: Event updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Events
+      summary: Delete event
+      operationId: deleteEvent
+      responses:
+        '204':
+          description: Event deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /events/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Events
+      summary: Get audit trail
+      operationId: getEventAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /events/export:
+    post:
+      tags:
+      - Events
+      summary: Export events as CSV
+      operationId: exportEvent
+      description: Submits an asynchronous export job. The response includes a job ID; poll the job for download URL.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                format:
+                  type: string
+                  enum:
+                  - csv
+                  - ndjson
+                  - xlsx
+                filters:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '202':
+          description: Export job accepted.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                  statusUrl:
+                    type: string
+                    format: uri
+      security:
+      - bearerAuth: []
+  /events/{id}/enable:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - Events
+      summary: Enable event
+      operationId: enableEvent
+      description: Transitions the record to the enable state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /events/{id}/disable:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - Events
+      summary: Disable event
+      operationId: disableEvent
+      description: Transitions the record to the disable state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /rules:
+    get:
+      tags:
+      - Rules
+      summary: List rules
+      operationId: listRule
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of rules.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Returns a paginated list of rules. Supports status and free-text filters.
+    post:
+      tags:
+      - Rules
+      summary: Create rule
+      operationId: createRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRuleRequest'
+      responses:
+        '201':
+          description: Rule created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Creates a new rule record.
+  /rules/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Rules
+      summary: Get rule by ID
+      operationId: getRule
+      responses:
+        '200':
+          description: Rule details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Rules
+      summary: Update rule
+      operationId: updateRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRuleRequest'
+      responses:
+        '200':
+          description: Rule updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Rules
+      summary: Delete rule
+      operationId: deleteRule
+      responses:
+        '204':
+          description: Rule deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /rules/export:
+    post:
+      tags:
+      - Rules
+      summary: Export rules as CSV
+      operationId: exportRule
+      description: Submits an asynchronous export job. The response includes a job ID; poll the job for download URL.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                format:
+                  type: string
+                  enum:
+                  - csv
+                  - ndjson
+                  - xlsx
+                filters:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '202':
+          description: Export job accepted.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                  statusUrl:
+                    type: string
+                    format: uri
+      security:
+      - bearerAuth: []
+  /rules/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Rules
+      summary: Get audit trail
+      operationId: getRuleAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /rules/search:
+    post:
+      tags:
+      - Rules
+      summary: Advanced search across rules
+      operationId: searchRule
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleList'
+      security:
+      - bearerAuth: []
+  /labels:
+    get:
+      tags:
+      - Labels
+      summary: List labels
+      operationId: listLabel
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of labels.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabelList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Returns a paginated list of labels. Supports status and free-text filters.
+    post:
+      tags:
+      - Labels
+      summary: Create label
+      operationId: createLabel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLabelRequest'
+      responses:
+        '201':
+          description: Label created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Creates a new label record.
+  /labels/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Labels
+      summary: Get label by ID
+      operationId: getLabel
+      responses:
+        '200':
+          description: Label details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Labels
+      summary: Update label
+      operationId: updateLabel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLabelRequest'
+      responses:
+        '200':
+          description: Label updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Labels
+      summary: Delete label
+      operationId: deleteLabel
+      responses:
+        '204':
+          description: Label deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /labels/export:
+    post:
+      tags:
+      - Labels
+      summary: Export labels as CSV
+      operationId: exportLabel
+      description: Submits an asynchronous export job. The response includes a job ID; poll the job for download URL.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                format:
+                  type: string
+                  enum:
+                  - csv
+                  - ndjson
+                  - xlsx
+                filters:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '202':
+          description: Export job accepted.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                  statusUrl:
+                    type: string
+                    format: uri
+      security:
+      - bearerAuth: []
+  /labels/stats:
+    get:
+      tags:
+      - Labels
+      summary: Aggregate labels stats
+      operationId: getLabelStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /labels/search:
+    post:
+      tags:
+      - Labels
+      summary: Advanced search across labels
+      operationId: searchLabel
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabelList'
+      security:
+      - bearerAuth: []
+  /alerts:
+    get:
+      tags:
+      - Alerts
+      summary: List alerts
+      operationId: listAlert
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of alerts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Returns a paginated list of alerts. Supports status and free-text filters.
+    post:
+      tags:
+      - Alerts
+      summary: Create alert
+      operationId: createAlert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAlertRequest'
+      responses:
+        '201':
+          description: Alert created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Creates a new alert record.
+  /alerts/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Alerts
+      summary: Get alert by ID
+      operationId: getAlert
+      responses:
+        '200':
+          description: Alert details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Alerts
+      summary: Update alert
+      operationId: updateAlert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAlertRequest'
+      responses:
+        '200':
+          description: Alert updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Alerts
+      summary: Delete alert
+      operationId: deleteAlert
+      responses:
+        '204':
+          description: Alert deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /alerts/search:
+    post:
+      tags:
+      - Alerts
+      summary: Advanced search across alerts
+      operationId: searchAlert
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertList'
+      security:
+      - bearerAuth: []
+  /alerts/export:
+    post:
+      tags:
+      - Alerts
+      summary: Export alerts as CSV
+      operationId: exportAlert
+      description: Submits an asynchronous export job. The response includes a job ID; poll the job for download URL.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                format:
+                  type: string
+                  enum:
+                  - csv
+                  - ndjson
+                  - xlsx
+                filters:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '202':
+          description: Export job accepted.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                  statusUrl:
+                    type: string
+                    format: uri
+      security:
+      - bearerAuth: []
+  /links:
+    get:
+      tags:
+      - Links
+      summary: List links
+      operationId: listLink
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of links.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Returns a paginated list of links. Supports status and free-text filters.
+    post:
+      tags:
+      - Links
+      summary: Create link
+      operationId: createLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLinkRequest'
+      responses:
+        '201':
+          description: Link created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Creates a new link record.
+  /links/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Links
+      summary: Get link by ID
+      operationId: getLink
+      responses:
+        '200':
+          description: Link details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Links
+      summary: Update link
+      operationId: updateLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLinkRequest'
+      responses:
+        '200':
+          description: Link updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Links
+      summary: Delete link
+      operationId: deleteLink
+      responses:
+        '204':
+          description: Link deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /links/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Links
+      summary: Get audit trail
+      operationId: getLinkAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /links/bulk:
+    post:
+      tags:
+      - Links
+      summary: Bulk create links
+      operationId: bulkCreateLink
+      description: Create up to 500 records in a single request. Returns per-row results.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  maxItems: 500
+                  items:
+                    $ref: '#/components/schemas/CreateLinkRequest'
+              required:
+              - items
+      responses:
+        '200':
+          description: Bulk operation results.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  succeeded:
+                    type: integer
+                  failed:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        index:
+                          type: integer
+                        id:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        error:
+                          type: string
+                          nullable: true
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Links
+      summary: Bulk delete links
+      operationId: bulkDeleteLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+              required:
+              - ids
+      responses:
+        '200':
+          description: Deletion summary.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: integer
+                  skipped:
+                    type: integer
+      security:
+      - bearerAuth: []
+  /links/{id}/attachments:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Links
+      summary: List attachments
+      operationId: listLinkAttachments
+      responses:
+        '200':
+          description: Attachments list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Attachment'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Links
+      summary: Upload attachment
+      operationId: uploadLinkAttachment
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                description:
+                  type: string
+              required:
+              - file
+      responses:
+        '201':
+          description: Attachment created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    Recipe:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-assigned unique identifier.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum:
+          - pending
+          - active
+          - inactive
+          - archived
+          description: 'Lifecycle status. One of: pending, active, inactive, archived.'
+          example: pending
+        slug: &id001
+          type: string
+          description: URL-safe slug
+          example: north-region
+        code: &id002
+          type: string
+          description: Short identifier code
+          example: Q3-NORTH
+        threshold: &id003
+          type: number
+          format: float
+          description: Threshold value
+          example: 100
+        archived: &id004
+          type: boolean
+          description: Whether the record is archived
+          example: false
+        publishedAt: &id005
+          type: string
+          format: date-time
+          description: Publication timestamp
+          example: '2026-04-15T12:00:00Z'
+        subtotal: &id006
+          type: number
+          format: float
+          description: Subtotal before fees and tax
+          example: 100.0
+        currency: &id007
+          type: string
+          description: ISO 4217 currency code
+          example: USD
+        createdBy: &id008
+          type: string
+          format: uuid
+          description: Creator user ID
+          example: 550e8400-e29b-41d4-a716-446655440010
+        phone: &id009
+          type: string
+          description: E.164 phone number
+          example: '+442071838750'
+        email: &id010
+          type: string
+          format: email
+          description: Email address
+          example: team@example.com
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (RFC 3339).
+          example: '2026-04-30T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp (RFC 3339).
+          example: '2026-04-30T12:34:56Z'
+        tags: &id011
+          type: array
+          items:
+            type: string
+          description: Free-form tags.
+          example:
+          - priority
+          - verified
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    RecipeList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Recipe'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateRecipeRequest:
+      type: object
+      properties:
+        slug: *id001
+        code: *id002
+        threshold: *id003
+        archived: *id004
+        publishedAt: *id005
+        subtotal: *id006
+        currency: *id007
+        createdBy: *id008
+        phone: *id009
+        email: *id010
+        tags: *id011
+      required:
+      - slug
+      - code
+    UpdateRecipeRequest:
+      type: object
+      properties:
+        slug: *id001
+        code: *id002
+        threshold: *id003
+        archived: *id004
+        publishedAt: *id005
+        subtotal: *id006
+        currency: *id007
+        createdBy: *id008
+        phone: *id009
+        email: *id010
+        tags: *id011
+      required:
+      - slug
+      - code
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-assigned unique identifier.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+          description: 'Lifecycle status. One of: draft, published, archived.'
+          example: draft
+        title: &id012
+          type: string
+          description: Title
+          example: Quarterly review
+        name: &id013
+          type: string
+          description: Display name
+          example: Delta
+        count: &id014
+          type: integer
+          description: Item count
+          example: 100
+        capacity: &id015
+          type: integer
+          description: Maximum capacity
+          example: 250
+        priority: &id016
+          type: integer
+          description: Numeric priority (lower is higher)
+          example: 5
+        verified: &id017
+          type: boolean
+          description: Whether the record has been verified
+          example: true
+        visible: &id018
+          type: boolean
+          description: Whether visible to users
+          example: true
+        dueDate: &id019
+          type: string
+          format: date
+          description: Due date
+          example: '2026-05-01'
+        createdBy: &id020
+          type: string
+          format: uuid
+          description: Creator user ID
+          example: 550e8400-e29b-41d4-a716-446655440010
+        organizationId: &id021
+          type: string
+          format: uuid
+          description: Owning organization ID
+          example: org_550e8400e29b
+        ownerId: &id022
+          type: string
+          format: uuid
+          description: Owning user ID
+          example: 550e8400-e29b-41d4-a716-446655440000
+        phone: &id023
+          type: string
+          description: E.164 phone number
+          example: '+442071838750'
+        email: &id024
+          type: string
+          format: email
+          description: Email address
+          example: team@example.com
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (RFC 3339).
+          example: '2026-04-30T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp (RFC 3339).
+          example: '2026-04-30T12:34:56Z'
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    EventList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateEventRequest:
+      type: object
+      properties:
+        title: *id012
+        name: *id013
+        count: *id014
+        capacity: *id015
+        priority: *id016
+        verified: *id017
+        visible: *id018
+        dueDate: *id019
+        createdBy: *id020
+        organizationId: *id021
+        ownerId: *id022
+        phone: *id023
+        email: *id024
+      required:
+      - title
+      - name
+    UpdateEventRequest:
+      type: object
+      properties:
+        title: *id012
+        name: *id013
+        count: *id014
+        capacity: *id015
+        priority: *id016
+        verified: *id017
+        visible: *id018
+        dueDate: *id019
+        createdBy: *id020
+        organizationId: *id021
+        ownerId: *id022
+        phone: *id023
+        email: *id024
+      required:
+      - title
+      - name
+    Rule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-assigned unique identifier.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+          description: 'Lifecycle status. One of: queued, processing, completed, failed, cancelled.'
+          example: queued
+        name: &id025
+          type: string
+          description: Display name
+          example: Beta
+        reference: &id026
+          type: string
+          description: External reference identifier
+          example: REF-99213
+        code: &id027
+          type: string
+          description: Short identifier code
+          example: PRD-2024
+        title: &id028
+          type: string
+          description: Title
+          example: Welcome packet
+        verified: &id029
+          type: boolean
+          description: Whether the record has been verified
+          example: false
+        endDate: &id030
+          type: string
+          format: date
+          description: End date
+          example: '2026-12-31'
+        scheduledAt: &id031
+          type: string
+          format: date-time
+          description: Scheduled timestamp
+          example: '2026-05-01T09:00:00Z'
+        lastSeenAt: &id032
+          type: string
+          format: date-time
+          description: Last seen timestamp
+          example: '2026-04-30T08:15:00Z'
+        price: &id033
+          type: number
+          format: float
+          description: Price per unit
+          example: 49.5
+        amount: &id034
+          type: number
+          format: float
+          description: Monetary amount
+          example: 99.99
+        teamId: &id035
+          type: string
+          format: uuid
+          description: Owning team ID
+          example: team_550e8400e29b
+        createdBy: &id036
+          type: string
+          format: uuid
+          description: Creator user ID
+          example: 550e8400-e29b-41d4-a716-446655440010
+        organizationId: &id037
+          type: string
+          format: uuid
+          description: Owning organization ID
+          example: org_550e8400e29b
+        phone: &id038
+          type: string
+          description: E.164 phone number
+          example: '+442071838750'
+        websiteUrl: &id039
+          type: string
+          format: uri
+          description: Public website URL
+          example: https://example.org/team
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (RFC 3339).
+          example: '2026-04-30T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp (RFC 3339).
+          example: '2026-04-30T12:34:56Z'
+        tags: &id040
+          type: array
+          items:
+            type: string
+          description: Free-form tags.
+          example:
+          - priority
+          - verified
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    RuleList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Rule'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateRuleRequest:
+      type: object
+      properties:
+        name: *id025
+        reference: *id026
+        code: *id027
+        title: *id028
+        verified: *id029
+        endDate: *id030
+        scheduledAt: *id031
+        lastSeenAt: *id032
+        price: *id033
+        amount: *id034
+        teamId: *id035
+        createdBy: *id036
+        organizationId: *id037
+        phone: *id038
+        websiteUrl: *id039
+        tags: *id040
+      required:
+      - name
+      - reference
+    UpdateRuleRequest:
+      type: object
+      properties:
+        name: *id025
+        reference: *id026
+        code: *id027
+        title: *id028
+        verified: *id029
+        endDate: *id030
+        scheduledAt: *id031
+        lastSeenAt: *id032
+        price: *id033
+        amount: *id034
+        teamId: *id035
+        createdBy: *id036
+        organizationId: *id037
+        phone: *id038
+        websiteUrl: *id039
+        tags: *id040
+      required:
+      - name
+      - reference
+    Label:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-assigned unique identifier.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+          description: 'Lifecycle status. One of: draft, published, archived.'
+          example: draft
+        externalId: &id041
+          type: string
+          description: ID in upstream system
+          example: vendor-id-123
+        summary: &id042
+          type: string
+          description: One-line summary
+          example: A concise summary used in list views.
+        threshold: &id043
+          type: number
+          format: float
+          description: Threshold value
+          example: 100
+        version: &id044
+          type: integer
+          description: Version number
+          example: 3
+        visible: &id045
+          type: boolean
+          description: Whether visible to users
+          example: true
+        endDate: &id046
+          type: string
+          format: date
+          description: End date
+          example: '2026-09-30'
+        price: &id047
+          type: number
+          format: float
+          description: Price per unit
+          example: 199.0
+        subtotal: &id048
+          type: number
+          format: float
+          description: Subtotal before fees and tax
+          example: 100.0
+        teamId: &id049
+          type: string
+          format: uuid
+          description: Owning team ID
+          example: team_550e8400e29b
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (RFC 3339).
+          example: '2026-04-30T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp (RFC 3339).
+          example: '2026-04-30T12:34:56Z'
+        tags: &id050
+          type: array
+          items:
+            type: string
+          description: Free-form tags.
+          example:
+          - priority
+          - verified
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LabelList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLabelRequest:
+      type: object
+      properties:
+        externalId: *id041
+        summary: *id042
+        threshold: *id043
+        version: *id044
+        visible: *id045
+        endDate: *id046
+        price: *id047
+        subtotal: *id048
+        teamId: *id049
+        tags: *id050
+      required:
+      - externalId
+      - summary
+    UpdateLabelRequest:
+      type: object
+      properties:
+        externalId: *id041
+        summary: *id042
+        threshold: *id043
+        version: *id044
+        visible: *id045
+        endDate: *id046
+        price: *id047
+        subtotal: *id048
+        teamId: *id049
+        tags: *id050
+      required:
+      - externalId
+      - summary
+    Alert:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-assigned unique identifier.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+          description: 'Lifecycle status. One of: open, closed.'
+          example: open
+        code: &id051
+          type: string
+          description: Short identifier code
+          example: Q3-NORTH
+        description: &id052
+          type: string
+          description: Free-form description
+          example: Internal notes describing operational use.
+        notes: &id053
+          type: string
+          description: Internal notes
+          example: Pending manager approval.
+        version: &id054
+          type: integer
+          description: Version number
+          example: 1
+        score: &id055
+          type: number
+          format: float
+          description: Computed score
+          example: 0.81
+        locked: &id056
+          type: boolean
+          description: Whether the record is locked from edits
+          example: false
+        default: &id057
+          type: boolean
+          description: Whether this is the default record
+          example: false
+        expiresAt: &id058
+          type: string
+          format: date-time
+          description: Expiry timestamp
+          example: '2026-12-31T23:59:59Z'
+        startDate: &id059
+          type: string
+          format: date
+          description: Start date
+          example: '2026-01-01'
+        completedAt: &id060
+          type: string
+          format: date-time
+          description: Completion timestamp
+          example: '2026-04-29T18:30:00Z'
+        total: &id061
+          type: number
+          format: float
+          description: Computed total
+          example: 1234.56
+        subtotal: &id062
+          type: number
+          format: float
+          description: Subtotal before fees and tax
+          example: 100.0
+        organizationId: &id063
+          type: string
+          format: uuid
+          description: Owning organization ID
+          example: org_550e8400e29b
+        tagId: &id064
+          type: string
+          format: uuid
+          description: Linked tag ID
+          example: tag_priority
+        createdBy: &id065
+          type: string
+          format: uuid
+          description: Creator user ID
+          example: 550e8400-e29b-41d4-a716-446655440010
+        phone: &id066
+          type: string
+          description: E.164 phone number
+          example: '+14155550100'
+        websiteUrl: &id067
+          type: string
+          format: uri
+          description: Public website URL
+          example: https://example.org/team
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (RFC 3339).
+          example: '2026-04-30T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp (RFC 3339).
+          example: '2026-04-30T12:34:56Z'
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    AlertList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alert'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateAlertRequest:
+      type: object
+      properties:
+        code: *id051
+        description: *id052
+        notes: *id053
+        version: *id054
+        score: *id055
+        locked: *id056
+        default: *id057
+        expiresAt: *id058
+        startDate: *id059
+        completedAt: *id060
+        total: *id061
+        subtotal: *id062
+        organizationId: *id063
+        tagId: *id064
+        createdBy: *id065
+        phone: *id066
+        websiteUrl: *id067
+      required:
+      - code
+      - description
+    UpdateAlertRequest:
+      type: object
+      properties:
+        code: *id051
+        description: *id052
+        notes: *id053
+        version: *id054
+        score: *id055
+        locked: *id056
+        default: *id057
+        expiresAt: *id058
+        startDate: *id059
+        completedAt: *id060
+        total: *id061
+        subtotal: *id062
+        organizationId: *id063
+        tagId: *id064
+        createdBy: *id065
+        phone: *id066
+        websiteUrl: *id067
+      required:
+      - code
+      - description
+    Link:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-assigned unique identifier.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+          description: 'Lifecycle status. One of: draft, published, archived.'
+          example: draft
+        name: &id068
+          type: string
+          description: Display name
+          example: Sierra
+        description: &id069
+          type: string
+          description: Free-form description
+          example: Internal notes describing operational use.
+        reference: &id070
+          type: string
+          description: External reference identifier
+          example: CASE-44021
+        threshold: &id071
+          type: number
+          format: float
+          description: Threshold value
+          example: 100
+        position: &id072
+          type: integer
+          description: Sequence position
+          example: 0
+        capacity: &id073
+          type: integer
+          description: Maximum capacity
+          example: 50
+        enabled: &id074
+          type: boolean
+          description: Whether the record is enabled
+          example: true
+        publishedAt: &id075
+          type: string
+          format: date-time
+          description: Publication timestamp
+          example: '2026-04-15T12:00:00Z'
+        discount: &id076
+          type: number
+          format: float
+          description: Applied discount
+          example: 5.0
+        currency: &id077
+          type: string
+          description: ISO 4217 currency code
+          example: EUR
+        parentId: &id078
+          type: string
+          format: uuid
+          description: Parent record ID
+          example: 550e8400-e29b-41d4-a716-446655440099
+        teamId: &id079
+          type: string
+          format: uuid
+          description: Owning team ID
+          example: team_550e8400e29b
+        websiteUrl: &id080
+          type: string
+          format: uri
+          description: Public website URL
+          example: https://example.org/team
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (RFC 3339).
+          example: '2026-04-30T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp (RFC 3339).
+          example: '2026-04-30T12:34:56Z'
+        tags: &id081
+          type: array
+          items:
+            type: string
+          description: Free-form tags.
+          example:
+          - priority
+          - verified
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LinkList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLinkRequest:
+      type: object
+      properties:
+        name: *id068
+        description: *id069
+        reference: *id070
+        threshold: *id071
+        position: *id072
+        capacity: *id073
+        enabled: *id074
+        publishedAt: *id075
+        discount: *id076
+        currency: *id077
+        parentId: *id078
+        teamId: *id079
+        websiteUrl: *id080
+        tags: *id081
+      required:
+      - name
+      - description
+    UpdateLinkRequest:
+      type: object
+      properties:
+        name: *id068
+        description: *id069
+        reference: *id070
+        threshold: *id071
+        position: *id072
+        capacity: *id073
+        enabled: *id074
+        publishedAt: *id075
+        discount: *id076
+        currency: *id077
+        parentId: *id078
+        teamId: *id079
+        websiteUrl: *id080
+        tags: *id081
+      required:
+      - name
+      - description
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

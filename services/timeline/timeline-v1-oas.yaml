@@ -1,0 +1,1075 @@
+openapi: 3.0.3
+info:
+  title: Timeline API
+  description: Aggregated user timeline.
+  version: 1.1.0
+  contact:
+    name: Timeline Team
+    email: timeline@example.com
+servers:
+- url: https://api.example.com/timeline/v1
+  description: Production
+- url: https://staging-api.example.com/timeline/v1
+  description: Staging
+tags:
+- name: Timeline
+  description: Timeline resource operations.
+- name: Links
+  description: Links resource operations.
+- name: Notes
+  description: Notes resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /timeline:
+    get:
+      tags:
+      - Timeline
+      summary: List timeline
+      operationId: listTimeline
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of timeline.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimelineList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Timeline
+      summary: Create timeline
+      operationId: createTimeline
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTimelineRequest'
+      responses:
+        '201':
+          description: Timeline created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Timeline'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /timeline/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Timeline
+      summary: Get timeline by ID
+      operationId: getTimeline
+      responses:
+        '200':
+          description: Timeline details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Timeline'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Timeline
+      summary: Update timeline
+      operationId: updateTimeline
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTimelineRequest'
+      responses:
+        '200':
+          description: Timeline updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Timeline'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Timeline
+      summary: Delete timeline
+      operationId: deleteTimeline
+      responses:
+        '204':
+          description: Timeline deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /timeline/{id}/assign:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - Timeline
+      summary: Assign timeline
+      operationId: assignTimeline
+      description: Transitions the record to the assign state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Timeline'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /timeline/{id}/unassign:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - Timeline
+      summary: Unassign timeline
+      operationId: unassignTimeline
+      description: Transitions the record to the unassign state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Timeline'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /timeline/search:
+    post:
+      tags:
+      - Timeline
+      summary: Advanced search across timeline
+      operationId: searchTimeline
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimelineList'
+      security:
+      - bearerAuth: []
+  /timeline/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Timeline
+      summary: Get audit trail
+      operationId: getTimelineAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /links:
+    get:
+      tags:
+      - Links
+      summary: List links
+      operationId: listLink
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of links.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Links
+      summary: Create link
+      operationId: createLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLinkRequest'
+      responses:
+        '201':
+          description: Link created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /links/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Links
+      summary: Get link by ID
+      operationId: getLink
+      responses:
+        '200':
+          description: Link details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Links
+      summary: Update link
+      operationId: updateLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLinkRequest'
+      responses:
+        '200':
+          description: Link updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Links
+      summary: Delete link
+      operationId: deleteLink
+      responses:
+        '204':
+          description: Link deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /links/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Links
+      summary: Get audit trail
+      operationId: getLinkAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /notes:
+    get:
+      tags:
+      - Notes
+      summary: List notes
+      operationId: listNote
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of notes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Notes
+      summary: Create note
+      operationId: createNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNoteRequest'
+      responses:
+        '201':
+          description: Note created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /notes/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Notes
+      summary: Get note by ID
+      operationId: getNote
+      responses:
+        '200':
+          description: Note details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Notes
+      summary: Update note
+      operationId: updateNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNoteRequest'
+      responses:
+        '200':
+          description: Note updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Notes
+      summary: Delete note
+      operationId: deleteNote
+      responses:
+        '204':
+          description: Note deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /notes/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Notes
+      summary: Get audit trail
+      operationId: getNoteAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    Timeline:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+        summary: &id001
+          type: string
+        slug: &id002
+          type: string
+        displayName: &id003
+          type: string
+        weight: &id004
+          type: number
+          format: float
+        priority: &id005
+          type: integer
+        enabled: &id006
+          type: boolean
+        lastSeenAt: &id007
+          type: string
+          format: date-time
+        price: &id008
+          type: number
+          format: float
+        fee: &id009
+          type: number
+          format: float
+        teamId: &id010
+          type: string
+          format: uuid
+        createdBy: &id011
+          type: string
+          format: uuid
+        email: &id012
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    TimelineList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Timeline'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateTimelineRequest:
+      type: object
+      properties:
+        summary: *id001
+        slug: *id002
+        displayName: *id003
+        weight: *id004
+        priority: *id005
+        enabled: *id006
+        lastSeenAt: *id007
+        price: *id008
+        fee: *id009
+        teamId: *id010
+        createdBy: *id011
+        email: *id012
+      required:
+      - summary
+      - slug
+    UpdateTimelineRequest:
+      type: object
+      properties:
+        summary: *id001
+        slug: *id002
+        displayName: *id003
+        weight: *id004
+        priority: *id005
+        enabled: *id006
+        lastSeenAt: *id007
+        price: *id008
+        fee: *id009
+        teamId: *id010
+        createdBy: *id011
+        email: *id012
+      required:
+      - summary
+      - slug
+    Link:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+        title: &id013
+          type: string
+        slug: &id014
+          type: string
+        position: &id015
+          type: integer
+        verified: &id016
+          type: boolean
+        completedAt: &id017
+          type: string
+          format: date-time
+        scheduledAt: &id018
+          type: string
+          format: date-time
+        fee: &id019
+          type: number
+          format: float
+        total: &id020
+          type: number
+          format: float
+        updatedBy: &id021
+          type: string
+          format: uuid
+        categoryId: &id022
+          type: string
+          format: uuid
+        websiteUrl: &id023
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LinkList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLinkRequest:
+      type: object
+      properties:
+        title: *id013
+        slug: *id014
+        position: *id015
+        verified: *id016
+        completedAt: *id017
+        scheduledAt: *id018
+        fee: *id019
+        total: *id020
+        updatedBy: *id021
+        categoryId: *id022
+        websiteUrl: *id023
+      required:
+      - title
+      - slug
+    UpdateLinkRequest:
+      type: object
+      properties:
+        title: *id013
+        slug: *id014
+        position: *id015
+        verified: *id016
+        completedAt: *id017
+        scheduledAt: *id018
+        fee: *id019
+        total: *id020
+        updatedBy: *id021
+        categoryId: *id022
+        websiteUrl: *id023
+      required:
+      - title
+      - slug
+    Note:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        code: &id024
+          type: string
+        name: &id025
+          type: string
+        externalId: &id026
+          type: string
+        version: &id027
+          type: integer
+        active: &id028
+          type: boolean
+        locked: &id029
+          type: boolean
+        endDate: &id030
+          type: string
+          format: date
+        total: &id031
+          type: number
+          format: float
+        updatedBy: &id032
+          type: string
+          format: uuid
+        parentId: &id033
+          type: string
+          format: uuid
+        email: &id034
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    NoteList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Note'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateNoteRequest:
+      type: object
+      properties:
+        code: *id024
+        name: *id025
+        externalId: *id026
+        version: *id027
+        active: *id028
+        locked: *id029
+        endDate: *id030
+        total: *id031
+        updatedBy: *id032
+        parentId: *id033
+        email: *id034
+      required:
+      - code
+      - name
+    UpdateNoteRequest:
+      type: object
+      properties:
+        code: *id024
+        name: *id025
+        externalId: *id026
+        version: *id027
+        active: *id028
+        locked: *id029
+        endDate: *id030
+        total: *id031
+        updatedBy: *id032
+        parentId: *id033
+        email: *id034
+      required:
+      - code
+      - name
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

@@ -1,0 +1,952 @@
+openapi: 3.0.3
+info:
+  title: Lessons API
+  description: Lesson content and sequencing.
+  version: 1.0.0
+  contact:
+    name: Lessons Team
+    email: lessons@example.com
+servers:
+- url: https://api.example.com/lessons/v1
+  description: Production
+- url: https://staging-api.example.com/lessons/v1
+  description: Staging
+tags:
+- name: Lessons
+  description: Lessons resource operations.
+- name: History
+  description: History resource operations.
+- name: Configs
+  description: Configs resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /lessons:
+    get:
+      tags:
+      - Lessons
+      summary: List lessons
+      operationId: listLesson
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of lessons.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Lessons
+      summary: Create lesson
+      operationId: createLesson
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLessonRequest'
+      responses:
+        '201':
+          description: Lesson created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /lessons/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Lessons
+      summary: Get lesson by ID
+      operationId: getLesson
+      responses:
+        '200':
+          description: Lesson details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Lessons
+      summary: Update lesson
+      operationId: updateLesson
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLessonRequest'
+      responses:
+        '200':
+          description: Lesson updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Lessons
+      summary: Delete lesson
+      operationId: deleteLesson
+      responses:
+        '204':
+          description: Lesson deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /lessons/search:
+    post:
+      tags:
+      - Lessons
+      summary: Advanced search across lessons
+      operationId: searchLesson
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonList'
+      security:
+      - bearerAuth: []
+  /lessons/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Lessons
+      summary: Get audit trail
+      operationId: getLessonAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /history:
+    get:
+      tags:
+      - History
+      summary: List history
+      operationId: listHistory
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of history.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - History
+      summary: Create history
+      operationId: createHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHistoryRequest'
+      responses:
+        '201':
+          description: History created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /history/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - History
+      summary: Get history by ID
+      operationId: getHistory
+      responses:
+        '200':
+          description: History details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - History
+      summary: Update history
+      operationId: updateHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHistoryRequest'
+      responses:
+        '200':
+          description: History updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - History
+      summary: Delete history
+      operationId: deleteHistory
+      responses:
+        '204':
+          description: History deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /configs:
+    get:
+      tags:
+      - Configs
+      summary: List configs
+      operationId: listConfig
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of configs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Configs
+      summary: Create config
+      operationId: createConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConfigRequest'
+      responses:
+        '201':
+          description: Config created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /configs/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Configs
+      summary: Get config by ID
+      operationId: getConfig
+      responses:
+        '200':
+          description: Config details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Configs
+      summary: Update config
+      operationId: updateConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateConfigRequest'
+      responses:
+        '200':
+          description: Config updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Configs
+      summary: Delete config
+      operationId: deleteConfig
+      responses:
+        '204':
+          description: Config deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /configs/search:
+    post:
+      tags:
+      - Configs
+      summary: Advanced search across configs
+      operationId: searchConfig
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigList'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    Lesson:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        code: &id001
+          type: string
+        summary: &id002
+          type: string
+        reference: &id003
+          type: string
+        score: &id004
+          type: number
+          format: float
+        enabled: &id005
+          type: boolean
+        active: &id006
+          type: boolean
+        lastSeenAt: &id007
+          type: string
+          format: date-time
+        dueDate: &id008
+          type: string
+          format: date
+        amount: &id009
+          type: number
+          format: float
+        currency: &id010
+          type: string
+        createdBy: &id011
+          type: string
+          format: uuid
+        categoryId: &id012
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LessonList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Lesson'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLessonRequest:
+      type: object
+      properties:
+        code: *id001
+        summary: *id002
+        reference: *id003
+        score: *id004
+        enabled: *id005
+        active: *id006
+        lastSeenAt: *id007
+        dueDate: *id008
+        amount: *id009
+        currency: *id010
+        createdBy: *id011
+        categoryId: *id012
+      required:
+      - code
+      - summary
+    UpdateLessonRequest:
+      type: object
+      properties:
+        code: *id001
+        summary: *id002
+        reference: *id003
+        score: *id004
+        enabled: *id005
+        active: *id006
+        lastSeenAt: *id007
+        dueDate: *id008
+        amount: *id009
+        currency: *id010
+        createdBy: *id011
+        categoryId: *id012
+      required:
+      - code
+      - summary
+    History:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        name: &id013
+          type: string
+        code: &id014
+          type: string
+        slug: &id015
+          type: string
+        archived: &id016
+          type: boolean
+        locked: &id017
+          type: boolean
+        completedAt: &id018
+          type: string
+          format: date-time
+        expiresAt: &id019
+          type: string
+          format: date-time
+        createdBy: &id020
+          type: string
+          format: uuid
+        email: &id021
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    HistoryList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/History'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateHistoryRequest:
+      type: object
+      properties:
+        name: *id013
+        code: *id014
+        slug: *id015
+        archived: *id016
+        locked: *id017
+        completedAt: *id018
+        expiresAt: *id019
+        createdBy: *id020
+        email: *id021
+      required:
+      - name
+      - code
+    UpdateHistoryRequest:
+      type: object
+      properties:
+        name: *id013
+        code: *id014
+        slug: *id015
+        archived: *id016
+        locked: *id017
+        completedAt: *id018
+        expiresAt: *id019
+        createdBy: *id020
+        email: *id021
+      required:
+      - name
+      - code
+    Config:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+        slug: &id022
+          type: string
+        title: &id023
+          type: string
+        summary: &id024
+          type: string
+        locked: &id025
+          type: boolean
+        default: &id026
+          type: boolean
+        startDate: &id027
+          type: string
+          format: date
+        currency: &id028
+          type: string
+        amount: &id029
+          type: number
+          format: float
+        categoryId: &id030
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ConfigList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Config'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateConfigRequest:
+      type: object
+      properties:
+        slug: *id022
+        title: *id023
+        summary: *id024
+        locked: *id025
+        default: *id026
+        startDate: *id027
+        currency: *id028
+        amount: *id029
+        categoryId: *id030
+      required:
+      - slug
+      - title
+    UpdateConfigRequest:
+      type: object
+      properties:
+        slug: *id022
+        title: *id023
+        summary: *id024
+        locked: *id025
+        default: *id026
+        startDate: *id027
+        currency: *id028
+        amount: *id029
+        categoryId: *id030
+      required:
+      - slug
+      - title
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

@@ -1,0 +1,309 @@
+openapi: 3.0.3
+info:
+  title: Email API
+  description: Transactional and marketing email delivery.
+  version: 1.1.0
+  contact:
+    name: Email Team
+    email: email@example.com
+servers:
+- url: https://api.example.com/email/v1
+  description: Production
+- url: https://staging-api.example.com/email/v1
+  description: Staging
+tags:
+- name: Email
+  description: Email resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /email:
+    get:
+      tags:
+      - Email
+      summary: List email
+      operationId: listEmail
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of email.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Email
+      summary: Create email
+      operationId: createEmail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEmailRequest'
+      responses:
+        '201':
+          description: Email created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Email'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /email/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Email
+      summary: Get email by ID
+      operationId: getEmail
+      responses:
+        '200':
+          description: Email details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Email'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Email
+      summary: Update email
+      operationId: updateEmail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEmailRequest'
+      responses:
+        '200':
+          description: Email updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Email'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Email
+      summary: Delete email
+      operationId: deleteEmail
+      responses:
+        '204':
+          description: Email deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Email:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        externalId: &id001
+          type: string
+        description: &id002
+          type: string
+        position: &id003
+          type: integer
+        archived: &id004
+          type: boolean
+        publishedAt: &id005
+          type: string
+          format: date-time
+        completedAt: &id006
+          type: string
+          format: date-time
+        discount: &id007
+          type: number
+          format: float
+        teamId: &id008
+          type: string
+          format: uuid
+        parentId: &id009
+          type: string
+          format: uuid
+        websiteUrl: &id010
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    EmailList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Email'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateEmailRequest:
+      type: object
+      properties:
+        externalId: *id001
+        description: *id002
+        position: *id003
+        archived: *id004
+        publishedAt: *id005
+        completedAt: *id006
+        discount: *id007
+        teamId: *id008
+        parentId: *id009
+        websiteUrl: *id010
+      required:
+      - externalId
+      - description
+    UpdateEmailRequest:
+      type: object
+      properties:
+        externalId: *id001
+        description: *id002
+        position: *id003
+        archived: *id004
+        publishedAt: *id005
+        completedAt: *id006
+        discount: *id007
+        teamId: *id008
+        parentId: *id009
+        websiteUrl: *id010
+      required:
+      - externalId
+      - description
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

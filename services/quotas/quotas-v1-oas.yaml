@@ -1,0 +1,874 @@
+openapi: 3.0.3
+info:
+  title: Quotas API
+  description: Per-tenant quota enforcement.
+  version: 2.0.0
+  contact:
+    name: Quotas Team
+    email: quotas@example.com
+servers:
+- url: https://api.example.com/quotas/v1
+  description: Production
+- url: https://staging-api.example.com/quotas/v1
+  description: Staging
+tags:
+- name: Quotas
+  description: Quotas resource operations.
+- name: Templates
+  description: Templates resource operations.
+- name: Exports
+  description: Exports resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /quotas:
+    get:
+      tags:
+      - Quotas
+      summary: List quotas
+      operationId: listQuota
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of quotas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuotaList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Quotas
+      summary: Create quota
+      operationId: createQuota
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQuotaRequest'
+      responses:
+        '201':
+          description: Quota created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quota'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /quotas/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Quotas
+      summary: Get quota by ID
+      operationId: getQuota
+      responses:
+        '200':
+          description: Quota details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quota'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Quotas
+      summary: Update quota
+      operationId: updateQuota
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQuotaRequest'
+      responses:
+        '200':
+          description: Quota updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quota'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Quotas
+      summary: Delete quota
+      operationId: deleteQuota
+      responses:
+        '204':
+          description: Quota deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /quotas/{id}/publish:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - Quotas
+      summary: Publish quota
+      operationId: publishQuota
+      description: Transitions the record to the publish state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quota'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /quotas/{id}/unpublish:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - Quotas
+      summary: Unpublish quota
+      operationId: unpublishQuota
+      description: Transitions the record to the unpublish state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quota'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /templates:
+    get:
+      tags:
+      - Templates
+      summary: List templates
+      operationId: listTemplate
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of templates.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Templates
+      summary: Create template
+      operationId: createTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTemplateRequest'
+      responses:
+        '201':
+          description: Template created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /templates/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Templates
+      summary: Get template by ID
+      operationId: getTemplate
+      responses:
+        '200':
+          description: Template details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Templates
+      summary: Update template
+      operationId: updateTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTemplateRequest'
+      responses:
+        '200':
+          description: Template updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Templates
+      summary: Delete template
+      operationId: deleteTemplate
+      responses:
+        '204':
+          description: Template deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /exports:
+    get:
+      tags:
+      - Exports
+      summary: List exports
+      operationId: listExport
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of exports.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Exports
+      summary: Create export
+      operationId: createExport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExportRequest'
+      responses:
+        '201':
+          description: Export created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Export'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /exports/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Exports
+      summary: Get export by ID
+      operationId: getExport
+      responses:
+        '200':
+          description: Export details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Export'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Exports
+      summary: Update export
+      operationId: updateExport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExportRequest'
+      responses:
+        '200':
+          description: Export updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Export'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Exports
+      summary: Delete export
+      operationId: deleteExport
+      responses:
+        '204':
+          description: Export deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /exports/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Exports
+      summary: Get audit trail
+      operationId: getExportAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    Quota:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        reference: &id001
+          type: string
+        summary: &id002
+          type: string
+        rank: &id003
+          type: integer
+        priority: &id004
+          type: integer
+        default: &id005
+          type: boolean
+        verified: &id006
+          type: boolean
+        startDate: &id007
+          type: string
+          format: date
+        expiresAt: &id008
+          type: string
+          format: date-time
+        teamId: &id009
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    QuotaList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Quota'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateQuotaRequest:
+      type: object
+      properties:
+        reference: *id001
+        summary: *id002
+        rank: *id003
+        priority: *id004
+        default: *id005
+        verified: *id006
+        startDate: *id007
+        expiresAt: *id008
+        teamId: *id009
+      required:
+      - reference
+      - summary
+    UpdateQuotaRequest:
+      type: object
+      properties:
+        reference: *id001
+        summary: *id002
+        rank: *id003
+        priority: *id004
+        default: *id005
+        verified: *id006
+        startDate: *id007
+        expiresAt: *id008
+        teamId: *id009
+      required:
+      - reference
+      - summary
+    Template:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - scheduled
+          - running
+          - completed
+          - failed
+        description: &id010
+          type: string
+        summary: &id011
+          type: string
+        active: &id012
+          type: boolean
+        endDate: &id013
+          type: string
+          format: date
+        teamId: &id014
+          type: string
+          format: uuid
+        categoryId: &id015
+          type: string
+          format: uuid
+        phone: &id016
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    TemplateList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Template'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateTemplateRequest:
+      type: object
+      properties:
+        description: *id010
+        summary: *id011
+        active: *id012
+        endDate: *id013
+        teamId: *id014
+        categoryId: *id015
+        phone: *id016
+      required:
+      - description
+      - summary
+    UpdateTemplateRequest:
+      type: object
+      properties:
+        description: *id010
+        summary: *id011
+        active: *id012
+        endDate: *id013
+        teamId: *id014
+        categoryId: *id015
+        phone: *id016
+      required:
+      - description
+      - summary
+    Export:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        title: &id017
+          type: string
+        name: &id018
+          type: string
+        priority: &id019
+          type: integer
+        archived: &id020
+          type: boolean
+        default: &id021
+          type: boolean
+        completedAt: &id022
+          type: string
+          format: date-time
+        discount: &id023
+          type: number
+          format: float
+        price: &id024
+          type: number
+          format: float
+        updatedBy: &id025
+          type: string
+          format: uuid
+        email: &id026
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ExportList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Export'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateExportRequest:
+      type: object
+      properties:
+        title: *id017
+        name: *id018
+        priority: *id019
+        archived: *id020
+        default: *id021
+        completedAt: *id022
+        discount: *id023
+        price: *id024
+        updatedBy: *id025
+        email: *id026
+      required:
+      - title
+      - name
+    UpdateExportRequest:
+      type: object
+      properties:
+        title: *id017
+        name: *id018
+        priority: *id019
+        archived: *id020
+        default: *id021
+        completedAt: *id022
+        discount: *id023
+        price: *id024
+        updatedBy: *id025
+        email: *id026
+      required:
+      - title
+      - name
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

@@ -1,0 +1,963 @@
+openapi: 3.0.3
+info:
+  title: Onboarding API
+  description: New-hire onboarding workflows.
+  version: 1.3.4
+  contact:
+    name: Onboarding Team
+    email: onboarding@example.com
+servers:
+- url: https://api.example.com/onboarding/v1
+  description: Production
+- url: https://staging-api.example.com/onboarding/v1
+  description: Staging
+tags:
+- name: Onboarding
+  description: Onboarding resource operations.
+- name: History
+  description: History resource operations.
+- name: Policies
+  description: Policies resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /onboarding:
+    get:
+      tags:
+      - Onboarding
+      summary: List onboarding
+      operationId: listOnboarding
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of onboarding.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Onboarding
+      summary: Create onboarding
+      operationId: createOnboarding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOnboardingRequest'
+      responses:
+        '201':
+          description: Onboarding created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Onboarding'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /onboarding/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Onboarding
+      summary: Get onboarding by ID
+      operationId: getOnboarding
+      responses:
+        '200':
+          description: Onboarding details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Onboarding'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Onboarding
+      summary: Update onboarding
+      operationId: updateOnboarding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOnboardingRequest'
+      responses:
+        '200':
+          description: Onboarding updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Onboarding'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Onboarding
+      summary: Delete onboarding
+      operationId: deleteOnboarding
+      responses:
+        '204':
+          description: Onboarding deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /onboarding/{id}/enable:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - Onboarding
+      summary: Enable onboarding
+      operationId: enableOnboarding
+      description: Transitions the record to the enable state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Onboarding'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /onboarding/{id}/disable:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - Onboarding
+      summary: Disable onboarding
+      operationId: disableOnboarding
+      description: Transitions the record to the disable state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Onboarding'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /history:
+    get:
+      tags:
+      - History
+      summary: List history
+      operationId: listHistory
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of history.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - History
+      summary: Create history
+      operationId: createHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHistoryRequest'
+      responses:
+        '201':
+          description: History created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /history/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - History
+      summary: Get history by ID
+      operationId: getHistory
+      responses:
+        '200':
+          description: History details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - History
+      summary: Update history
+      operationId: updateHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHistoryRequest'
+      responses:
+        '200':
+          description: History updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - History
+      summary: Delete history
+      operationId: deleteHistory
+      responses:
+        '204':
+          description: History deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /history/search:
+    post:
+      tags:
+      - History
+      summary: Advanced search across history
+      operationId: searchHistory
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryList'
+      security:
+      - bearerAuth: []
+  /policies:
+    get:
+      tags:
+      - Policies
+      summary: List policies
+      operationId: listPolicy
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of policies.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Policies
+      summary: Create policy
+      operationId: createPolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePolicyRequest'
+      responses:
+        '201':
+          description: Policy created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /policies/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Policies
+      summary: Get policy by ID
+      operationId: getPolicy
+      responses:
+        '200':
+          description: Policy details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Policies
+      summary: Update policy
+      operationId: updatePolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePolicyRequest'
+      responses:
+        '200':
+          description: Policy updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Policies
+      summary: Delete policy
+      operationId: deletePolicy
+      responses:
+        '204':
+          description: Policy deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /policies/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Policies
+      summary: Get audit trail
+      operationId: getPolicyAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    Onboarding:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        summary: &id001
+          type: string
+        displayName: &id002
+          type: string
+        slug: &id003
+          type: string
+        visible: &id004
+          type: boolean
+        verified: &id005
+          type: boolean
+        publishedAt: &id006
+          type: string
+          format: date-time
+        dueDate: &id007
+          type: string
+          format: date
+        currency: &id008
+          type: string
+        tagId: &id009
+          type: string
+          format: uuid
+        teamId: &id010
+          type: string
+          format: uuid
+        websiteUrl: &id011
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    OnboardingList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Onboarding'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateOnboardingRequest:
+      type: object
+      properties:
+        summary: *id001
+        displayName: *id002
+        slug: *id003
+        visible: *id004
+        verified: *id005
+        publishedAt: *id006
+        dueDate: *id007
+        currency: *id008
+        tagId: *id009
+        teamId: *id010
+        websiteUrl: *id011
+      required:
+      - summary
+      - displayName
+    UpdateOnboardingRequest:
+      type: object
+      properties:
+        summary: *id001
+        displayName: *id002
+        slug: *id003
+        visible: *id004
+        verified: *id005
+        publishedAt: *id006
+        dueDate: *id007
+        currency: *id008
+        tagId: *id009
+        teamId: *id010
+        websiteUrl: *id011
+      required:
+      - summary
+      - displayName
+    History:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        name: &id012
+          type: string
+        reference: &id013
+          type: string
+        count: &id014
+          type: integer
+        rank: &id015
+          type: integer
+        default: &id016
+          type: boolean
+        startDate: &id017
+          type: string
+          format: date
+        dueDate: &id018
+          type: string
+          format: date
+        price: &id019
+          type: number
+          format: float
+        amount: &id020
+          type: number
+          format: float
+        updatedBy: &id021
+          type: string
+          format: uuid
+        websiteUrl: &id022
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    HistoryList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/History'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateHistoryRequest:
+      type: object
+      properties:
+        name: *id012
+        reference: *id013
+        count: *id014
+        rank: *id015
+        default: *id016
+        startDate: *id017
+        dueDate: *id018
+        price: *id019
+        amount: *id020
+        updatedBy: *id021
+        websiteUrl: *id022
+      required:
+      - name
+      - reference
+    UpdateHistoryRequest:
+      type: object
+      properties:
+        name: *id012
+        reference: *id013
+        count: *id014
+        rank: *id015
+        default: *id016
+        startDate: *id017
+        dueDate: *id018
+        price: *id019
+        amount: *id020
+        updatedBy: *id021
+        websiteUrl: *id022
+      required:
+      - name
+      - reference
+    Policy:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - scheduled
+          - running
+          - completed
+          - failed
+        reference: &id023
+          type: string
+        summary: &id024
+          type: string
+        description: &id025
+          type: string
+        capacity: &id026
+          type: integer
+        visible: &id027
+          type: boolean
+        startDate: &id028
+          type: string
+          format: date
+        price: &id029
+          type: number
+          format: float
+        ownerId: &id030
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    PolicyList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Policy'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreatePolicyRequest:
+      type: object
+      properties:
+        reference: *id023
+        summary: *id024
+        description: *id025
+        capacity: *id026
+        visible: *id027
+        startDate: *id028
+        price: *id029
+        ownerId: *id030
+      required:
+      - reference
+      - summary
+    UpdatePolicyRequest:
+      type: object
+      properties:
+        reference: *id023
+        summary: *id024
+        description: *id025
+        capacity: *id026
+        visible: *id027
+        startDate: *id028
+        price: *id029
+        ownerId: *id030
+      required:
+      - reference
+      - summary
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

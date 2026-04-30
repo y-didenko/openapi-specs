@@ -1,0 +1,2072 @@
+openapi: 3.0.3
+info:
+  title: Dishes API
+  description: Individual dish metadata.
+  version: 1.0.0
+  contact:
+    name: Dishes Team
+    email: dishes@example.com
+servers:
+- url: https://api.example.com/dishes/v1
+  description: Production
+- url: https://staging-api.example.com/dishes/v1
+  description: Staging
+tags:
+- name: Dishes
+  description: Dishes resource operations.
+- name: Exports
+  description: Exports resource operations.
+- name: Labels
+  description: Labels resource operations.
+- name: Templates
+  description: Templates resource operations.
+- name: Rules
+  description: Rules resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /dishes:
+    get:
+      tags:
+      - Dishes
+      summary: List dishes
+      operationId: listDishe
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of dishes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisheList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Returns a paginated list of dishes. Supports status and free-text filters.
+    post:
+      tags:
+      - Dishes
+      summary: Create dishe
+      operationId: createDishe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDisheRequest'
+      responses:
+        '201':
+          description: Dishe created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dishe'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Creates a new dishe record.
+  /dishes/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Dishes
+      summary: Get dishe by ID
+      operationId: getDishe
+      responses:
+        '200':
+          description: Dishe details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dishe'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Dishes
+      summary: Update dishe
+      operationId: updateDishe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDisheRequest'
+      responses:
+        '200':
+          description: Dishe updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dishe'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Dishes
+      summary: Delete dishe
+      operationId: deleteDishe
+      responses:
+        '204':
+          description: Dishe deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /dishes/{id}/assign:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - Dishes
+      summary: Assign dishe
+      operationId: assignDishe
+      description: Transitions the record to the assign state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dishe'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /dishes/{id}/unassign:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - Dishes
+      summary: Unassign dishe
+      operationId: unassignDishe
+      description: Transitions the record to the unassign state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dishe'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /dishes/stats:
+    get:
+      tags:
+      - Dishes
+      summary: Aggregate dishes stats
+      operationId: getDisheStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /dishes/{id}/attachments:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Dishes
+      summary: List attachments
+      operationId: listDisheAttachments
+      responses:
+        '200':
+          description: Attachments list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Attachment'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Dishes
+      summary: Upload attachment
+      operationId: uploadDisheAttachment
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                description:
+                  type: string
+              required:
+              - file
+      responses:
+        '201':
+          description: Attachment created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+      security:
+      - bearerAuth: []
+  /dishes/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Dishes
+      summary: Get audit trail
+      operationId: getDisheAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /dishes/export:
+    post:
+      tags:
+      - Dishes
+      summary: Export dishes as CSV
+      operationId: exportDishe
+      description: Submits an asynchronous export job. The response includes a job ID; poll the job for download URL.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                format:
+                  type: string
+                  enum:
+                  - csv
+                  - ndjson
+                  - xlsx
+                filters:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '202':
+          description: Export job accepted.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                  statusUrl:
+                    type: string
+                    format: uri
+      security:
+      - bearerAuth: []
+  /exports:
+    get:
+      tags:
+      - Exports
+      summary: List exports
+      operationId: listExport
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of exports.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Returns a paginated list of exports. Supports status and free-text filters.
+    post:
+      tags:
+      - Exports
+      summary: Create export
+      operationId: createExport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExportRequest'
+      responses:
+        '201':
+          description: Export created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Export'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Creates a new export record.
+  /exports/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Exports
+      summary: Get export by ID
+      operationId: getExport
+      responses:
+        '200':
+          description: Export details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Export'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Exports
+      summary: Update export
+      operationId: updateExport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExportRequest'
+      responses:
+        '200':
+          description: Export updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Export'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Exports
+      summary: Delete export
+      operationId: deleteExport
+      responses:
+        '204':
+          description: Export deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /exports/{id}/comments:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Exports
+      summary: List comments
+      operationId: listExportComments
+      responses:
+        '200':
+          description: Comments list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommentEntry'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Exports
+      summary: Add comment
+      operationId: addExportComment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - body
+              properties:
+                body:
+                  type: string
+            example:
+              body: Reviewed and approved.
+      responses:
+        '201':
+          description: Comment created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentEntry'
+      security:
+      - bearerAuth: []
+  /exports/stats:
+    get:
+      tags:
+      - Exports
+      summary: Aggregate exports stats
+      operationId: getExportStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /exports/{id}/attachments:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Exports
+      summary: List attachments
+      operationId: listExportAttachments
+      responses:
+        '200':
+          description: Attachments list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Attachment'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Exports
+      summary: Upload attachment
+      operationId: uploadExportAttachment
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                description:
+                  type: string
+              required:
+              - file
+      responses:
+        '201':
+          description: Attachment created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+      security:
+      - bearerAuth: []
+  /labels:
+    get:
+      tags:
+      - Labels
+      summary: List labels
+      operationId: listLabel
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of labels.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabelList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Returns a paginated list of labels. Supports status and free-text filters.
+    post:
+      tags:
+      - Labels
+      summary: Create label
+      operationId: createLabel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLabelRequest'
+      responses:
+        '201':
+          description: Label created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Creates a new label record.
+  /labels/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Labels
+      summary: Get label by ID
+      operationId: getLabel
+      responses:
+        '200':
+          description: Label details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Labels
+      summary: Update label
+      operationId: updateLabel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLabelRequest'
+      responses:
+        '200':
+          description: Label updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Labels
+      summary: Delete label
+      operationId: deleteLabel
+      responses:
+        '204':
+          description: Label deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /labels/{id}/comments:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Labels
+      summary: List comments
+      operationId: listLabelComments
+      responses:
+        '200':
+          description: Comments list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommentEntry'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Labels
+      summary: Add comment
+      operationId: addLabelComment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - body
+              properties:
+                body:
+                  type: string
+            example:
+              body: Reviewed and approved.
+      responses:
+        '201':
+          description: Comment created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentEntry'
+      security:
+      - bearerAuth: []
+  /templates:
+    get:
+      tags:
+      - Templates
+      summary: List templates
+      operationId: listTemplate
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of templates.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Returns a paginated list of templates. Supports status and free-text filters.
+    post:
+      tags:
+      - Templates
+      summary: Create template
+      operationId: createTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTemplateRequest'
+      responses:
+        '201':
+          description: Template created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Creates a new template record.
+  /templates/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Templates
+      summary: Get template by ID
+      operationId: getTemplate
+      responses:
+        '200':
+          description: Template details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Templates
+      summary: Update template
+      operationId: updateTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTemplateRequest'
+      responses:
+        '200':
+          description: Template updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Templates
+      summary: Delete template
+      operationId: deleteTemplate
+      responses:
+        '204':
+          description: Template deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /templates/stats:
+    get:
+      tags:
+      - Templates
+      summary: Aggregate templates stats
+      operationId: getTemplateStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /rules:
+    get:
+      tags:
+      - Rules
+      summary: List rules
+      operationId: listRule
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of rules.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Returns a paginated list of rules. Supports status and free-text filters.
+    post:
+      tags:
+      - Rules
+      summary: Create rule
+      operationId: createRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRuleRequest'
+      responses:
+        '201':
+          description: Rule created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Creates a new rule record.
+  /rules/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Rules
+      summary: Get rule by ID
+      operationId: getRule
+      responses:
+        '200':
+          description: Rule details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Rules
+      summary: Update rule
+      operationId: updateRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRuleRequest'
+      responses:
+        '200':
+          description: Rule updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Rules
+      summary: Delete rule
+      operationId: deleteRule
+      responses:
+        '204':
+          description: Rule deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /rules/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Rules
+      summary: Get audit trail
+      operationId: getRuleAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /rules/search:
+    post:
+      tags:
+      - Rules
+      summary: Advanced search across rules
+      operationId: searchRule
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleList'
+      security:
+      - bearerAuth: []
+  /rules/export:
+    post:
+      tags:
+      - Rules
+      summary: Export rules as CSV
+      operationId: exportRule
+      description: Submits an asynchronous export job. The response includes a job ID; poll the job for download URL.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                format:
+                  type: string
+                  enum:
+                  - csv
+                  - ndjson
+                  - xlsx
+                filters:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '202':
+          description: Export job accepted.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                  statusUrl:
+                    type: string
+                    format: uri
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    Dishe:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-assigned unique identifier.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+          description: 'Lifecycle status. One of: pending, approved, rejected.'
+          example: pending
+        reference: &id001
+          type: string
+          description: External reference identifier
+          example: CASE-44021
+        title: &id002
+          type: string
+          description: Title
+          example: Quarterly review
+        code: &id003
+          type: string
+          description: Short identifier code
+          example: ALP-001
+        rank: &id004
+          type: integer
+          description: Sort rank
+          example: 7
+        score: &id005
+          type: number
+          format: float
+          description: Computed score
+          example: 0.81
+        threshold: &id006
+          type: number
+          format: float
+          description: Threshold value
+          example: 500
+        active: &id007
+          type: boolean
+          description: Whether the record is active
+          example: false
+        locked: &id008
+          type: boolean
+          description: Whether the record is locked from edits
+          example: false
+        completedAt: &id009
+          type: string
+          format: date-time
+          description: Completion timestamp
+          example: '2026-04-29T18:30:00Z'
+        price: &id010
+          type: number
+          format: float
+          description: Price per unit
+          example: 49.5
+        tagId: &id011
+          type: string
+          format: uuid
+          description: Linked tag ID
+          example: tag_priority
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (RFC 3339).
+          example: '2026-04-30T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp (RFC 3339).
+          example: '2026-04-30T12:34:56Z'
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    DisheList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Dishe'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateDisheRequest:
+      type: object
+      properties:
+        reference: *id001
+        title: *id002
+        code: *id003
+        rank: *id004
+        score: *id005
+        threshold: *id006
+        active: *id007
+        locked: *id008
+        completedAt: *id009
+        price: *id010
+        tagId: *id011
+      required:
+      - reference
+      - title
+    UpdateDisheRequest:
+      type: object
+      properties:
+        reference: *id001
+        title: *id002
+        code: *id003
+        rank: *id004
+        score: *id005
+        threshold: *id006
+        active: *id007
+        locked: *id008
+        completedAt: *id009
+        price: *id010
+        tagId: *id011
+      required:
+      - reference
+      - title
+    Export:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-assigned unique identifier.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum:
+          - pending
+          - active
+          - inactive
+          - archived
+          description: 'Lifecycle status. One of: pending, active, inactive, archived.'
+          example: pending
+        slug: &id012
+          type: string
+          description: URL-safe slug
+          example: north-region
+        externalId: &id013
+          type: string
+          description: ID in upstream system
+          example: src_8821
+        version: &id014
+          type: integer
+          description: Version number
+          example: 2
+        default: &id015
+          type: boolean
+          description: Whether this is the default record
+          example: false
+        lastSeenAt: &id016
+          type: string
+          format: date-time
+          description: Last seen timestamp
+          example: '2026-04-30T08:15:00Z'
+        endDate: &id017
+          type: string
+          format: date
+          description: End date
+          example: '2026-09-30'
+        createdBy: &id018
+          type: string
+          format: uuid
+          description: Creator user ID
+          example: 550e8400-e29b-41d4-a716-446655440010
+        tagId: &id019
+          type: string
+          format: uuid
+          description: Linked tag ID
+          example: tag_priority
+        phone: &id020
+          type: string
+          description: E.164 phone number
+          example: '+14155550100'
+        email: &id021
+          type: string
+          format: email
+          description: Email address
+          example: team@example.com
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (RFC 3339).
+          example: '2026-04-30T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp (RFC 3339).
+          example: '2026-04-30T12:34:56Z'
+        tags: &id022
+          type: array
+          items:
+            type: string
+          description: Free-form tags.
+          example:
+          - priority
+          - verified
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ExportList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Export'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateExportRequest:
+      type: object
+      properties:
+        slug: *id012
+        externalId: *id013
+        version: *id014
+        default: *id015
+        lastSeenAt: *id016
+        endDate: *id017
+        createdBy: *id018
+        tagId: *id019
+        phone: *id020
+        email: *id021
+        tags: *id022
+      required:
+      - slug
+      - externalId
+    UpdateExportRequest:
+      type: object
+      properties:
+        slug: *id012
+        externalId: *id013
+        version: *id014
+        default: *id015
+        lastSeenAt: *id016
+        endDate: *id017
+        createdBy: *id018
+        tagId: *id019
+        phone: *id020
+        email: *id021
+        tags: *id022
+      required:
+      - slug
+      - externalId
+    Label:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-assigned unique identifier.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+          description: 'Lifecycle status. One of: queued, processing, completed, failed, cancelled.'
+          example: queued
+        code: &id023
+          type: string
+          description: Short identifier code
+          example: PRD-2024
+        externalId: &id024
+          type: string
+          description: ID in upstream system
+          example: src_8821
+        visible: &id025
+          type: boolean
+          description: Whether visible to users
+          example: true
+        publishedAt: &id026
+          type: string
+          format: date-time
+          description: Publication timestamp
+          example: '2026-04-15T12:00:00Z'
+        completedAt: &id027
+          type: string
+          format: date-time
+          description: Completion timestamp
+          example: '2026-04-29T18:30:00Z'
+        scheduledAt: &id028
+          type: string
+          format: date-time
+          description: Scheduled timestamp
+          example: '2026-05-01T09:00:00Z'
+        discount: &id029
+          type: number
+          format: float
+          description: Applied discount
+          example: 25.0
+        organizationId: &id030
+          type: string
+          format: uuid
+          description: Owning organization ID
+          example: org_550e8400e29b
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (RFC 3339).
+          example: '2026-04-30T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp (RFC 3339).
+          example: '2026-04-30T12:34:56Z'
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LabelList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLabelRequest:
+      type: object
+      properties:
+        code: *id023
+        externalId: *id024
+        visible: *id025
+        publishedAt: *id026
+        completedAt: *id027
+        scheduledAt: *id028
+        discount: *id029
+        organizationId: *id030
+      required:
+      - code
+      - externalId
+    UpdateLabelRequest:
+      type: object
+      properties:
+        code: *id023
+        externalId: *id024
+        visible: *id025
+        publishedAt: *id026
+        completedAt: *id027
+        scheduledAt: *id028
+        discount: *id029
+        organizationId: *id030
+      required:
+      - code
+      - externalId
+    Template:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-assigned unique identifier.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+          description: 'Lifecycle status. One of: draft, published, archived.'
+          example: draft
+        description: &id031
+          type: string
+          description: Free-form description
+          example: Long-form description with detailed context.
+        displayName: &id032
+          type: string
+          description: Human-readable display name
+          example: Vega
+        score: &id033
+          type: number
+          format: float
+          description: Computed score
+          example: 0.42
+        active: &id034
+          type: boolean
+          description: Whether the record is active
+          example: true
+        verified: &id035
+          type: boolean
+          description: Whether the record has been verified
+          example: false
+        dueDate: &id036
+          type: string
+          format: date
+          description: Due date
+          example: '2026-05-01'
+        lastSeenAt: &id037
+          type: string
+          format: date-time
+          description: Last seen timestamp
+          example: '2026-04-30T08:15:00Z'
+        organizationId: &id038
+          type: string
+          format: uuid
+          description: Owning organization ID
+          example: org_550e8400e29b
+        categoryId: &id039
+          type: string
+          format: uuid
+          description: Linked category ID
+          example: cat_001
+        tagId: &id040
+          type: string
+          format: uuid
+          description: Linked tag ID
+          example: tag_priority
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (RFC 3339).
+          example: '2026-04-30T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp (RFC 3339).
+          example: '2026-04-30T12:34:56Z'
+        tags: &id041
+          type: array
+          items:
+            type: string
+          description: Free-form tags.
+          example:
+          - priority
+          - verified
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    TemplateList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Template'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateTemplateRequest:
+      type: object
+      properties:
+        description: *id031
+        displayName: *id032
+        score: *id033
+        active: *id034
+        verified: *id035
+        dueDate: *id036
+        lastSeenAt: *id037
+        organizationId: *id038
+        categoryId: *id039
+        tagId: *id040
+        tags: *id041
+      required:
+      - description
+      - displayName
+    UpdateTemplateRequest:
+      type: object
+      properties:
+        description: *id031
+        displayName: *id032
+        score: *id033
+        active: *id034
+        verified: *id035
+        dueDate: *id036
+        lastSeenAt: *id037
+        organizationId: *id038
+        categoryId: *id039
+        tagId: *id040
+        tags: *id041
+      required:
+      - description
+      - displayName
+    Rule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-assigned unique identifier.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+          description: 'Lifecycle status. One of: new, in_progress, resolved, closed.'
+          example: new
+        reference: &id042
+          type: string
+          description: External reference identifier
+          example: CASE-44021
+        code: &id043
+          type: string
+          description: Short identifier code
+          example: ALP-001
+        notes: &id044
+          type: string
+          description: Internal notes
+          example: Created via bulk import.
+        title: &id045
+          type: string
+          description: Title
+          example: New product launch
+        threshold: &id046
+          type: number
+          format: float
+          description: Threshold value
+          example: 100
+        priority: &id047
+          type: integer
+          description: Numeric priority (lower is higher)
+          example: 5
+        score: &id048
+          type: number
+          format: float
+          description: Computed score
+          example: 0.81
+        active: &id049
+          type: boolean
+          description: Whether the record is active
+          example: false
+        lastSeenAt: &id050
+          type: string
+          format: date-time
+          description: Last seen timestamp
+          example: '2026-04-30T08:15:00Z'
+        completedAt: &id051
+          type: string
+          format: date-time
+          description: Completion timestamp
+          example: '2026-04-29T18:30:00Z'
+        endDate: &id052
+          type: string
+          format: date
+          description: End date
+          example: '2026-12-31'
+        tagId: &id053
+          type: string
+          format: uuid
+          description: Linked tag ID
+          example: tag_priority
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (RFC 3339).
+          example: '2026-04-30T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp (RFC 3339).
+          example: '2026-04-30T12:34:56Z'
+        tags: &id054
+          type: array
+          items:
+            type: string
+          description: Free-form tags.
+          example:
+          - priority
+          - verified
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    RuleList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Rule'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateRuleRequest:
+      type: object
+      properties:
+        reference: *id042
+        code: *id043
+        notes: *id044
+        title: *id045
+        threshold: *id046
+        priority: *id047
+        score: *id048
+        active: *id049
+        lastSeenAt: *id050
+        completedAt: *id051
+        endDate: *id052
+        tagId: *id053
+        tags: *id054
+      required:
+      - reference
+      - code
+    UpdateRuleRequest:
+      type: object
+      properties:
+        reference: *id042
+        code: *id043
+        notes: *id044
+        title: *id045
+        threshold: *id046
+        priority: *id047
+        score: *id048
+        active: *id049
+        lastSeenAt: *id050
+        completedAt: *id051
+        endDate: *id052
+        tagId: *id053
+        tags: *id054
+      required:
+      - reference
+      - code
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

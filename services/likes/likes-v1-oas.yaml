@@ -1,0 +1,308 @@
+openapi: 3.0.3
+info:
+  title: Likes API
+  description: Likes and reactions.
+  version: 2.1.0
+  contact:
+    name: Likes Team
+    email: likes@example.com
+servers:
+- url: https://api.example.com/likes/v1
+  description: Production
+- url: https://staging-api.example.com/likes/v1
+  description: Staging
+tags:
+- name: Likes
+  description: Likes resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /likes:
+    get:
+      tags:
+      - Likes
+      summary: List likes
+      operationId: listLike
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of likes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LikeList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Likes
+      summary: Create like
+      operationId: createLike
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLikeRequest'
+      responses:
+        '201':
+          description: Like created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Like'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /likes/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Likes
+      summary: Get like by ID
+      operationId: getLike
+      responses:
+        '200':
+          description: Like details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Like'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Likes
+      summary: Update like
+      operationId: updateLike
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLikeRequest'
+      responses:
+        '200':
+          description: Like updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Like'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Likes
+      summary: Delete like
+      operationId: deleteLike
+      responses:
+        '204':
+          description: Like deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Like:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - active
+          - inactive
+          - archived
+        externalId: &id001
+          type: string
+        description: &id002
+          type: string
+        visible: &id003
+          type: boolean
+        enabled: &id004
+          type: boolean
+        startDate: &id005
+          type: string
+          format: date
+        fee: &id006
+          type: number
+          format: float
+        amount: &id007
+          type: number
+          format: float
+        categoryId: &id008
+          type: string
+          format: uuid
+        updatedBy: &id009
+          type: string
+          format: uuid
+        websiteUrl: &id010
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LikeList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Like'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLikeRequest:
+      type: object
+      properties:
+        externalId: *id001
+        description: *id002
+        visible: *id003
+        enabled: *id004
+        startDate: *id005
+        fee: *id006
+        amount: *id007
+        categoryId: *id008
+        updatedBy: *id009
+        websiteUrl: *id010
+      required:
+      - externalId
+      - description
+    UpdateLikeRequest:
+      type: object
+      properties:
+        externalId: *id001
+        description: *id002
+        visible: *id003
+        enabled: *id004
+        startDate: *id005
+        fee: *id006
+        amount: *id007
+        categoryId: *id008
+        updatedBy: *id009
+        websiteUrl: *id010
+      required:
+      - externalId
+      - description
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

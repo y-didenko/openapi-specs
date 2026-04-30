@@ -1,0 +1,300 @@
+openapi: 3.0.3
+info:
+  title: Stories API
+  description: Ephemeral story posts.
+  version: 1.3.4
+  contact:
+    name: Stories Team
+    email: stories@example.com
+servers:
+- url: https://api.example.com/stories/v1
+  description: Production
+- url: https://staging-api.example.com/stories/v1
+  description: Staging
+tags:
+- name: Stories
+  description: Stories resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /stories:
+    get:
+      tags:
+      - Stories
+      summary: List stories
+      operationId: listStory
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of stories.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoryList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Stories
+      summary: Create story
+      operationId: createStory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStoryRequest'
+      responses:
+        '201':
+          description: Story created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Story'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /stories/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Stories
+      summary: Get story by ID
+      operationId: getStory
+      responses:
+        '200':
+          description: Story details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Story'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Stories
+      summary: Update story
+      operationId: updateStory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStoryRequest'
+      responses:
+        '200':
+          description: Story updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Story'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Stories
+      summary: Delete story
+      operationId: deleteStory
+      responses:
+        '204':
+          description: Story deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Story:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        notes: &id001
+          type: string
+        name: &id002
+          type: string
+        active: &id003
+          type: boolean
+        endDate: &id004
+          type: string
+          format: date
+        dueDate: &id005
+          type: string
+          format: date
+        price: &id006
+          type: number
+          format: float
+        fee: &id007
+          type: number
+          format: float
+        tagId: &id008
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    StoryList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Story'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateStoryRequest:
+      type: object
+      properties:
+        notes: *id001
+        name: *id002
+        active: *id003
+        endDate: *id004
+        dueDate: *id005
+        price: *id006
+        fee: *id007
+        tagId: *id008
+      required:
+      - notes
+      - name
+    UpdateStoryRequest:
+      type: object
+      properties:
+        notes: *id001
+        name: *id002
+        active: *id003
+        endDate: *id004
+        dueDate: *id005
+        price: *id006
+        fee: *id007
+        tagId: *id008
+      required:
+      - notes
+      - name
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

@@ -1,0 +1,982 @@
+openapi: 3.0.3
+info:
+  title: Comments API
+  description: Threaded comments on entities.
+  version: 1.3.4
+  contact:
+    name: Comments Team
+    email: comments@example.com
+servers:
+- url: https://api.example.com/comments/v1
+  description: Production
+- url: https://staging-api.example.com/comments/v1
+  description: Staging
+tags:
+- name: Comments
+  description: Comments resource operations.
+- name: Configs
+  description: Configs resource operations.
+- name: Rules
+  description: Rules resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /comments:
+    get:
+      tags:
+      - Comments
+      summary: List comments
+      operationId: listComment
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of comments.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Comments
+      summary: Create comment
+      operationId: createComment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+      responses:
+        '201':
+          description: Comment created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /comments/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Comments
+      summary: Get comment by ID
+      operationId: getComment
+      responses:
+        '200':
+          description: Comment details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Comments
+      summary: Update comment
+      operationId: updateComment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCommentRequest'
+      responses:
+        '200':
+          description: Comment updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Comments
+      summary: Delete comment
+      operationId: deleteComment
+      responses:
+        '204':
+          description: Comment deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /comments/bulk:
+    post:
+      tags:
+      - Comments
+      summary: Bulk create comments
+      operationId: bulkCreateComment
+      description: Create up to 500 records in a single request. Returns per-row results.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  maxItems: 500
+                  items:
+                    $ref: '#/components/schemas/CreateCommentRequest'
+              required:
+              - items
+      responses:
+        '200':
+          description: Bulk operation results.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  succeeded:
+                    type: integer
+                  failed:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        index:
+                          type: integer
+                        id:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        error:
+                          type: string
+                          nullable: true
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Comments
+      summary: Bulk delete comments
+      operationId: bulkDeleteComment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+              required:
+              - ids
+      responses:
+        '200':
+          description: Deletion summary.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: integer
+                  skipped:
+                    type: integer
+      security:
+      - bearerAuth: []
+  /comments/stats:
+    get:
+      tags:
+      - Comments
+      summary: Aggregate comments stats
+      operationId: getCommentStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /configs:
+    get:
+      tags:
+      - Configs
+      summary: List configs
+      operationId: listConfig
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of configs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Configs
+      summary: Create config
+      operationId: createConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConfigRequest'
+      responses:
+        '201':
+          description: Config created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /configs/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Configs
+      summary: Get config by ID
+      operationId: getConfig
+      responses:
+        '200':
+          description: Config details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Configs
+      summary: Update config
+      operationId: updateConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateConfigRequest'
+      responses:
+        '200':
+          description: Config updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Configs
+      summary: Delete config
+      operationId: deleteConfig
+      responses:
+        '204':
+          description: Config deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /configs/search:
+    post:
+      tags:
+      - Configs
+      summary: Advanced search across configs
+      operationId: searchConfig
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigList'
+      security:
+      - bearerAuth: []
+  /rules:
+    get:
+      tags:
+      - Rules
+      summary: List rules
+      operationId: listRule
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of rules.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Rules
+      summary: Create rule
+      operationId: createRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRuleRequest'
+      responses:
+        '201':
+          description: Rule created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /rules/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Rules
+      summary: Get rule by ID
+      operationId: getRule
+      responses:
+        '200':
+          description: Rule details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Rules
+      summary: Update rule
+      operationId: updateRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRuleRequest'
+      responses:
+        '200':
+          description: Rule updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Rules
+      summary: Delete rule
+      operationId: deleteRule
+      responses:
+        '204':
+          description: Rule deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    Comment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+        title: &id001
+          type: string
+        description: &id002
+          type: string
+        rank: &id003
+          type: integer
+        version: &id004
+          type: integer
+        locked: &id005
+          type: boolean
+        completedAt: &id006
+          type: string
+          format: date-time
+        scheduledAt: &id007
+          type: string
+          format: date-time
+        amount: &id008
+          type: number
+          format: float
+        discount: &id009
+          type: number
+          format: float
+        organizationId: &id010
+          type: string
+          format: uuid
+        teamId: &id011
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    CommentList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateCommentRequest:
+      type: object
+      properties:
+        title: *id001
+        description: *id002
+        rank: *id003
+        version: *id004
+        locked: *id005
+        completedAt: *id006
+        scheduledAt: *id007
+        amount: *id008
+        discount: *id009
+        organizationId: *id010
+        teamId: *id011
+      required:
+      - title
+      - description
+    UpdateCommentRequest:
+      type: object
+      properties:
+        title: *id001
+        description: *id002
+        rank: *id003
+        version: *id004
+        locked: *id005
+        completedAt: *id006
+        scheduledAt: *id007
+        amount: *id008
+        discount: *id009
+        organizationId: *id010
+        teamId: *id011
+      required:
+      - title
+      - description
+    Config:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        slug: &id012
+          type: string
+        externalId: &id013
+          type: string
+        priority: &id014
+          type: integer
+        active: &id015
+          type: boolean
+        archived: &id016
+          type: boolean
+        lastSeenAt: &id017
+          type: string
+          format: date-time
+        amount: &id018
+          type: number
+          format: float
+        fee: &id019
+          type: number
+          format: float
+        ownerId: &id020
+          type: string
+          format: uuid
+        organizationId: &id021
+          type: string
+          format: uuid
+        phone: &id022
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ConfigList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Config'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateConfigRequest:
+      type: object
+      properties:
+        slug: *id012
+        externalId: *id013
+        priority: *id014
+        active: *id015
+        archived: *id016
+        lastSeenAt: *id017
+        amount: *id018
+        fee: *id019
+        ownerId: *id020
+        organizationId: *id021
+        phone: *id022
+      required:
+      - slug
+      - externalId
+    UpdateConfigRequest:
+      type: object
+      properties:
+        slug: *id012
+        externalId: *id013
+        priority: *id014
+        active: *id015
+        archived: *id016
+        lastSeenAt: *id017
+        amount: *id018
+        fee: *id019
+        ownerId: *id020
+        organizationId: *id021
+        phone: *id022
+      required:
+      - slug
+      - externalId
+    Rule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - scheduled
+          - running
+          - completed
+          - failed
+        notes: &id023
+          type: string
+        externalId: &id024
+          type: string
+        displayName: &id025
+          type: string
+        score: &id026
+          type: number
+          format: float
+        visible: &id027
+          type: boolean
+        scheduledAt: &id028
+          type: string
+          format: date-time
+        startDate: &id029
+          type: string
+          format: date
+        currency: &id030
+          type: string
+        organizationId: &id031
+          type: string
+          format: uuid
+        teamId: &id032
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    RuleList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Rule'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateRuleRequest:
+      type: object
+      properties:
+        notes: *id023
+        externalId: *id024
+        displayName: *id025
+        score: *id026
+        visible: *id027
+        scheduledAt: *id028
+        startDate: *id029
+        currency: *id030
+        organizationId: *id031
+        teamId: *id032
+      required:
+      - notes
+      - externalId
+    UpdateRuleRequest:
+      type: object
+      properties:
+        notes: *id023
+        externalId: *id024
+        displayName: *id025
+        score: *id026
+        visible: *id027
+        scheduledAt: *id028
+        startDate: *id029
+        currency: *id030
+        organizationId: *id031
+        teamId: *id032
+      required:
+      - notes
+      - externalId
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

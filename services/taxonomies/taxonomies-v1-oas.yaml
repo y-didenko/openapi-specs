@@ -1,0 +1,304 @@
+openapi: 3.0.3
+info:
+  title: Taxonomies API
+  description: Category trees and attribute schemas.
+  version: 1.2.0
+  contact:
+    name: Taxonomies Team
+    email: taxonomies@example.com
+servers:
+- url: https://api.example.com/taxonomies/v1
+  description: Production
+- url: https://staging-api.example.com/taxonomies/v1
+  description: Staging
+tags:
+- name: Taxonomies
+  description: Taxonomies resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /taxonomies:
+    get:
+      tags:
+      - Taxonomies
+      summary: List taxonomies
+      operationId: listTaxonomy
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of taxonomies.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaxonomyList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Taxonomies
+      summary: Create taxonomy
+      operationId: createTaxonomy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaxonomyRequest'
+      responses:
+        '201':
+          description: Taxonomy created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Taxonomy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /taxonomies/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Taxonomies
+      summary: Get taxonomy by ID
+      operationId: getTaxonomy
+      responses:
+        '200':
+          description: Taxonomy details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Taxonomy'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Taxonomies
+      summary: Update taxonomy
+      operationId: updateTaxonomy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaxonomyRequest'
+      responses:
+        '200':
+          description: Taxonomy updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Taxonomy'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Taxonomies
+      summary: Delete taxonomy
+      operationId: deleteTaxonomy
+      responses:
+        '204':
+          description: Taxonomy deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Taxonomy:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+        summary: &id001
+          type: string
+        code: &id002
+          type: string
+        displayName: &id003
+          type: string
+        count: &id004
+          type: integer
+        priority: &id005
+          type: integer
+        default: &id006
+          type: boolean
+        expiresAt: &id007
+          type: string
+          format: date-time
+        publishedAt: &id008
+          type: string
+          format: date-time
+        parentId: &id009
+          type: string
+          format: uuid
+        websiteUrl: &id010
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    TaxonomyList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Taxonomy'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateTaxonomyRequest:
+      type: object
+      properties:
+        summary: *id001
+        code: *id002
+        displayName: *id003
+        count: *id004
+        priority: *id005
+        default: *id006
+        expiresAt: *id007
+        publishedAt: *id008
+        parentId: *id009
+        websiteUrl: *id010
+      required:
+      - summary
+      - code
+    UpdateTaxonomyRequest:
+      type: object
+      properties:
+        summary: *id001
+        code: *id002
+        displayName: *id003
+        count: *id004
+        priority: *id005
+        default: *id006
+        expiresAt: *id007
+        publishedAt: *id008
+        parentId: *id009
+        websiteUrl: *id010
+      required:
+      - summary
+      - code
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

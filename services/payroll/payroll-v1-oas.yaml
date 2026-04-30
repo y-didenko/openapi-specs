@@ -1,0 +1,516 @@
+openapi: 3.0.3
+info:
+  title: Payroll API
+  description: Payroll runs and earnings.
+  version: 2.1.0
+  contact:
+    name: Payroll Team
+    email: payroll@example.com
+servers:
+- url: https://api.example.com/payroll/v1
+  description: Production
+- url: https://staging-api.example.com/payroll/v1
+  description: Staging
+tags:
+- name: Payroll
+  description: Payroll resource operations.
+- name: Shares
+  description: Shares resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /payroll:
+    get:
+      tags:
+      - Payroll
+      summary: List payroll
+      operationId: listPayroll
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of payroll.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Payroll
+      summary: Create payroll
+      operationId: createPayroll
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePayrollRequest'
+      responses:
+        '201':
+          description: Payroll created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payroll'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /payroll/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Payroll
+      summary: Get payroll by ID
+      operationId: getPayroll
+      responses:
+        '200':
+          description: Payroll details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payroll'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Payroll
+      summary: Update payroll
+      operationId: updatePayroll
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePayrollRequest'
+      responses:
+        '200':
+          description: Payroll updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payroll'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Payroll
+      summary: Delete payroll
+      operationId: deletePayroll
+      responses:
+        '204':
+          description: Payroll deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /shares:
+    get:
+      tags:
+      - Shares
+      summary: List shares
+      operationId: listShare
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of shares.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Shares
+      summary: Create share
+      operationId: createShare
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShareRequest'
+      responses:
+        '201':
+          description: Share created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /shares/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Shares
+      summary: Get share by ID
+      operationId: getShare
+      responses:
+        '200':
+          description: Share details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Shares
+      summary: Update share
+      operationId: updateShare
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateShareRequest'
+      responses:
+        '200':
+          description: Share updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Shares
+      summary: Delete share
+      operationId: deleteShare
+      responses:
+        '204':
+          description: Share deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Payroll:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - scheduled
+          - running
+          - completed
+          - failed
+        description: &id001
+          type: string
+        reference: &id002
+          type: string
+        position: &id003
+          type: integer
+        capacity: &id004
+          type: integer
+        default: &id005
+          type: boolean
+        locked: &id006
+          type: boolean
+        scheduledAt: &id007
+          type: string
+          format: date-time
+        completedAt: &id008
+          type: string
+          format: date-time
+        ownerId: &id009
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    PayrollList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payroll'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreatePayrollRequest:
+      type: object
+      properties:
+        description: *id001
+        reference: *id002
+        position: *id003
+        capacity: *id004
+        default: *id005
+        locked: *id006
+        scheduledAt: *id007
+        completedAt: *id008
+        ownerId: *id009
+      required:
+      - description
+      - reference
+    UpdatePayrollRequest:
+      type: object
+      properties:
+        description: *id001
+        reference: *id002
+        position: *id003
+        capacity: *id004
+        default: *id005
+        locked: *id006
+        scheduledAt: *id007
+        completedAt: *id008
+        ownerId: *id009
+      required:
+      - description
+      - reference
+    Share:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - scheduled
+          - running
+          - completed
+          - failed
+        externalId: &id010
+          type: string
+        slug: &id011
+          type: string
+        summary: &id012
+          type: string
+        version: &id013
+          type: integer
+        count: &id014
+          type: integer
+        active: &id015
+          type: boolean
+        enabled: &id016
+          type: boolean
+        endDate: &id017
+          type: string
+          format: date
+        currency: &id018
+          type: string
+        parentId: &id019
+          type: string
+          format: uuid
+        phone: &id020
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ShareList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Share'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateShareRequest:
+      type: object
+      properties:
+        externalId: *id010
+        slug: *id011
+        summary: *id012
+        version: *id013
+        count: *id014
+        active: *id015
+        enabled: *id016
+        endDate: *id017
+        currency: *id018
+        parentId: *id019
+        phone: *id020
+      required:
+      - externalId
+      - slug
+    UpdateShareRequest:
+      type: object
+      properties:
+        externalId: *id010
+        slug: *id011
+        summary: *id012
+        version: *id013
+        count: *id014
+        active: *id015
+        enabled: *id016
+        endDate: *id017
+        currency: *id018
+        parentId: *id019
+        phone: *id020
+      required:
+      - externalId
+      - slug
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

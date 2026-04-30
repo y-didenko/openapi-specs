@@ -1,0 +1,1903 @@
+openapi: 3.0.3
+info:
+  title: Logs API
+  description: Log query and ingestion.
+  version: 1.1.0
+  contact:
+    name: Logs Team
+    email: logs@example.com
+servers:
+- url: https://api.example.com/logs/v1
+  description: Production
+- url: https://staging-api.example.com/logs/v1
+  description: Staging
+tags:
+- name: Logs
+  description: Logs resource operations.
+- name: Links
+  description: Links resource operations.
+- name: History
+  description: History resource operations.
+- name: Events
+  description: Events resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /logs:
+    get:
+      tags:
+      - Logs
+      summary: List logs
+      operationId: listLog
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of logs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Returns a paginated list of logs. Supports status and free-text filters.
+    post:
+      tags:
+      - Logs
+      summary: Create log
+      operationId: createLog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLogRequest'
+      responses:
+        '201':
+          description: Log created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Log'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Creates a new log record.
+  /logs/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Logs
+      summary: Get log by ID
+      operationId: getLog
+      responses:
+        '200':
+          description: Log details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Log'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Logs
+      summary: Update log
+      operationId: updateLog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLogRequest'
+      responses:
+        '200':
+          description: Log updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Log'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Logs
+      summary: Delete log
+      operationId: deleteLog
+      responses:
+        '204':
+          description: Log deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /logs/stats:
+    get:
+      tags:
+      - Logs
+      summary: Aggregate logs stats
+      operationId: getLogStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /logs/search:
+    post:
+      tags:
+      - Logs
+      summary: Advanced search across logs
+      operationId: searchLog
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogList'
+      security:
+      - bearerAuth: []
+  /logs/{id}/attachments:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Logs
+      summary: List attachments
+      operationId: listLogAttachments
+      responses:
+        '200':
+          description: Attachments list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Attachment'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Logs
+      summary: Upload attachment
+      operationId: uploadLogAttachment
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                description:
+                  type: string
+              required:
+              - file
+      responses:
+        '201':
+          description: Attachment created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+      security:
+      - bearerAuth: []
+  /logs/{id}/archive:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - Logs
+      summary: Archive log
+      operationId: archiveLog
+      description: Transitions the record to the archive state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Log'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /logs/{id}/restore:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - Logs
+      summary: Restore log
+      operationId: restoreLog
+      description: Transitions the record to the restore state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Log'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /logs/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Logs
+      summary: Get audit trail
+      operationId: getLogAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /logs/{id}/comments:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Logs
+      summary: List comments
+      operationId: listLogComments
+      responses:
+        '200':
+          description: Comments list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommentEntry'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Logs
+      summary: Add comment
+      operationId: addLogComment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - body
+              properties:
+                body:
+                  type: string
+            example:
+              body: Reviewed and approved.
+      responses:
+        '201':
+          description: Comment created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentEntry'
+      security:
+      - bearerAuth: []
+  /links:
+    get:
+      tags:
+      - Links
+      summary: List links
+      operationId: listLink
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of links.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Returns a paginated list of links. Supports status and free-text filters.
+    post:
+      tags:
+      - Links
+      summary: Create link
+      operationId: createLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLinkRequest'
+      responses:
+        '201':
+          description: Link created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Creates a new link record.
+  /links/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Links
+      summary: Get link by ID
+      operationId: getLink
+      responses:
+        '200':
+          description: Link details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Links
+      summary: Update link
+      operationId: updateLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLinkRequest'
+      responses:
+        '200':
+          description: Link updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Links
+      summary: Delete link
+      operationId: deleteLink
+      responses:
+        '204':
+          description: Link deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /links/{id}/attachments:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Links
+      summary: List attachments
+      operationId: listLinkAttachments
+      responses:
+        '200':
+          description: Attachments list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Attachment'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Links
+      summary: Upload attachment
+      operationId: uploadLinkAttachment
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                description:
+                  type: string
+              required:
+              - file
+      responses:
+        '201':
+          description: Attachment created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+      security:
+      - bearerAuth: []
+  /links/bulk:
+    post:
+      tags:
+      - Links
+      summary: Bulk create links
+      operationId: bulkCreateLink
+      description: Create up to 500 records in a single request. Returns per-row results.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  maxItems: 500
+                  items:
+                    $ref: '#/components/schemas/CreateLinkRequest'
+              required:
+              - items
+      responses:
+        '200':
+          description: Bulk operation results.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  succeeded:
+                    type: integer
+                  failed:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        index:
+                          type: integer
+                        id:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        error:
+                          type: string
+                          nullable: true
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Links
+      summary: Bulk delete links
+      operationId: bulkDeleteLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+              required:
+              - ids
+      responses:
+        '200':
+          description: Deletion summary.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: integer
+                  skipped:
+                    type: integer
+      security:
+      - bearerAuth: []
+  /history:
+    get:
+      tags:
+      - History
+      summary: List history
+      operationId: listHistory
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of history.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Returns a paginated list of history. Supports status and free-text filters.
+    post:
+      tags:
+      - History
+      summary: Create history
+      operationId: createHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHistoryRequest'
+      responses:
+        '201':
+          description: History created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Creates a new history record.
+  /history/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - History
+      summary: Get history by ID
+      operationId: getHistory
+      responses:
+        '200':
+          description: History details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - History
+      summary: Update history
+      operationId: updateHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHistoryRequest'
+      responses:
+        '200':
+          description: History updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - History
+      summary: Delete history
+      operationId: deleteHistory
+      responses:
+        '204':
+          description: History deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /history/{id}/start:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - History
+      summary: Start history
+      operationId: startHistory
+      description: Transitions the record to the start state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /history/{id}/complete:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - History
+      summary: Complete history
+      operationId: completeHistory
+      description: Transitions the record to the complete state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /history/{id}/cancel:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - History
+      summary: Cancel history
+      operationId: cancelHistory
+      description: Transitions the record to the cancel state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /history/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - History
+      summary: Get audit trail
+      operationId: getHistoryAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /events:
+    get:
+      tags:
+      - Events
+      summary: List events
+      operationId: listEvent
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of events.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Returns a paginated list of events. Supports status and free-text filters.
+    post:
+      tags:
+      - Events
+      summary: Create event
+      operationId: createEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventRequest'
+      responses:
+        '201':
+          description: Event created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Creates a new event record.
+  /events/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Events
+      summary: Get event by ID
+      operationId: getEvent
+      responses:
+        '200':
+          description: Event details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Events
+      summary: Update event
+      operationId: updateEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEventRequest'
+      responses:
+        '200':
+          description: Event updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Events
+      summary: Delete event
+      operationId: deleteEvent
+      responses:
+        '204':
+          description: Event deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /events/search:
+    post:
+      tags:
+      - Events
+      summary: Advanced search across events
+      operationId: searchEvent
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventList'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    Log:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-assigned unique identifier.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+          description: 'Lifecycle status. One of: queued, processing, completed, failed, cancelled.'
+          example: queued
+        summary: &id001
+          type: string
+          description: One-line summary
+          example: Brief context for downstream consumers.
+        displayName: &id002
+          type: string
+          description: Human-readable display name
+          example: Atlas
+        reference: &id003
+          type: string
+          description: External reference identifier
+          example: EXT-2024-0100
+        version: &id004
+          type: integer
+          description: Version number
+          example: 2
+        count: &id005
+          type: integer
+          description: Item count
+          example: 3
+        locked: &id006
+          type: boolean
+          description: Whether the record is locked from edits
+          example: false
+        startDate: &id007
+          type: string
+          format: date
+          description: Start date
+          example: '2026-04-15'
+        completedAt: &id008
+          type: string
+          format: date-time
+          description: Completion timestamp
+          example: '2026-04-29T18:30:00Z'
+        expiresAt: &id009
+          type: string
+          format: date-time
+          description: Expiry timestamp
+          example: '2026-12-31T23:59:59Z'
+        total: &id010
+          type: number
+          format: float
+          description: Computed total
+          example: 999.0
+        teamId: &id011
+          type: string
+          format: uuid
+          description: Owning team ID
+          example: team_550e8400e29b
+        updatedBy: &id012
+          type: string
+          format: uuid
+          description: Last editor user ID
+          example: 550e8400-e29b-41d4-a716-446655440011
+        createdBy: &id013
+          type: string
+          format: uuid
+          description: Creator user ID
+          example: 550e8400-e29b-41d4-a716-446655440010
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (RFC 3339).
+          example: '2026-04-30T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp (RFC 3339).
+          example: '2026-04-30T12:34:56Z'
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LogList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Log'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLogRequest:
+      type: object
+      properties:
+        summary: *id001
+        displayName: *id002
+        reference: *id003
+        version: *id004
+        count: *id005
+        locked: *id006
+        startDate: *id007
+        completedAt: *id008
+        expiresAt: *id009
+        total: *id010
+        teamId: *id011
+        updatedBy: *id012
+        createdBy: *id013
+      required:
+      - summary
+      - displayName
+    UpdateLogRequest:
+      type: object
+      properties:
+        summary: *id001
+        displayName: *id002
+        reference: *id003
+        version: *id004
+        count: *id005
+        locked: *id006
+        startDate: *id007
+        completedAt: *id008
+        expiresAt: *id009
+        total: *id010
+        teamId: *id011
+        updatedBy: *id012
+        createdBy: *id013
+      required:
+      - summary
+      - displayName
+    Link:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-assigned unique identifier.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+          description: 'Lifecycle status. One of: new, in_progress, resolved, closed.'
+          example: new
+        summary: &id014
+          type: string
+          description: One-line summary
+          example: Brief context for downstream consumers.
+        code: &id015
+          type: string
+          description: Short identifier code
+          example: OPS-42
+        slug: &id016
+          type: string
+          description: URL-safe slug
+          example: north-region
+        position: &id017
+          type: integer
+          description: Sequence position
+          example: 1
+        version: &id018
+          type: integer
+          description: Version number
+          example: 2
+        score: &id019
+          type: number
+          format: float
+          description: Computed score
+          example: 0.81
+        verified: &id020
+          type: boolean
+          description: Whether the record has been verified
+          example: false
+        default: &id021
+          type: boolean
+          description: Whether this is the default record
+          example: false
+        startDate: &id022
+          type: string
+          format: date
+          description: Start date
+          example: '2026-04-15'
+        amount: &id023
+          type: number
+          format: float
+          description: Monetary amount
+          example: 99.99
+        price: &id024
+          type: number
+          format: float
+          description: Price per unit
+          example: 9.99
+        organizationId: &id025
+          type: string
+          format: uuid
+          description: Owning organization ID
+          example: org_550e8400e29b
+        ownerId: &id026
+          type: string
+          format: uuid
+          description: Owning user ID
+          example: 550e8400-e29b-41d4-a716-446655440000
+        websiteUrl: &id027
+          type: string
+          format: uri
+          description: Public website URL
+          example: https://example.org/team
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (RFC 3339).
+          example: '2026-04-30T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp (RFC 3339).
+          example: '2026-04-30T12:34:56Z'
+        tags: &id028
+          type: array
+          items:
+            type: string
+          description: Free-form tags.
+          example:
+          - priority
+          - verified
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LinkList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLinkRequest:
+      type: object
+      properties:
+        summary: *id014
+        code: *id015
+        slug: *id016
+        position: *id017
+        version: *id018
+        score: *id019
+        verified: *id020
+        default: *id021
+        startDate: *id022
+        amount: *id023
+        price: *id024
+        organizationId: *id025
+        ownerId: *id026
+        websiteUrl: *id027
+        tags: *id028
+      required:
+      - summary
+      - code
+    UpdateLinkRequest:
+      type: object
+      properties:
+        summary: *id014
+        code: *id015
+        slug: *id016
+        position: *id017
+        version: *id018
+        score: *id019
+        verified: *id020
+        default: *id021
+        startDate: *id022
+        amount: *id023
+        price: *id024
+        organizationId: *id025
+        ownerId: *id026
+        websiteUrl: *id027
+        tags: *id028
+      required:
+      - summary
+      - code
+    History:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-assigned unique identifier.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+          description: 'Lifecycle status. One of: open, closed.'
+          example: open
+        name: &id029
+          type: string
+          description: Display name
+          example: Alpha
+        code: &id030
+          type: string
+          description: Short identifier code
+          example: X-7
+        notes: &id031
+          type: string
+          description: Internal notes
+          example: Created via bulk import.
+        threshold: &id032
+          type: number
+          format: float
+          description: Threshold value
+          example: 100
+        active: &id033
+          type: boolean
+          description: Whether the record is active
+          example: true
+        scheduledAt: &id034
+          type: string
+          format: date-time
+          description: Scheduled timestamp
+          example: '2026-05-01T09:00:00Z'
+        completedAt: &id035
+          type: string
+          format: date-time
+          description: Completion timestamp
+          example: '2026-04-29T18:30:00Z'
+        fee: &id036
+          type: number
+          format: float
+          description: Fee amount
+          example: 2.5
+        categoryId: &id037
+          type: string
+          format: uuid
+          description: Linked category ID
+          example: cat_001
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (RFC 3339).
+          example: '2026-04-30T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp (RFC 3339).
+          example: '2026-04-30T12:34:56Z'
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    HistoryList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/History'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateHistoryRequest:
+      type: object
+      properties:
+        name: *id029
+        code: *id030
+        notes: *id031
+        threshold: *id032
+        active: *id033
+        scheduledAt: *id034
+        completedAt: *id035
+        fee: *id036
+        categoryId: *id037
+      required:
+      - name
+      - code
+    UpdateHistoryRequest:
+      type: object
+      properties:
+        name: *id029
+        code: *id030
+        notes: *id031
+        threshold: *id032
+        active: *id033
+        scheduledAt: *id034
+        completedAt: *id035
+        fee: *id036
+        categoryId: *id037
+      required:
+      - name
+      - code
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-assigned unique identifier.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+          description: 'Lifecycle status. One of: pending, approved, rejected.'
+          example: pending
+        slug: &id038
+          type: string
+          description: URL-safe slug
+          example: weekly-summary
+        title: &id039
+          type: string
+          description: Title
+          example: New product launch
+        version: &id040
+          type: integer
+          description: Version number
+          example: 2
+        weight: &id041
+          type: number
+          format: float
+          description: Weighting factor
+          example: 2.5
+        threshold: &id042
+          type: number
+          format: float
+          description: Threshold value
+          example: 0.75
+        enabled: &id043
+          type: boolean
+          description: Whether the record is enabled
+          example: true
+        active: &id044
+          type: boolean
+          description: Whether the record is active
+          example: false
+        lastSeenAt: &id045
+          type: string
+          format: date-time
+          description: Last seen timestamp
+          example: '2026-04-30T08:15:00Z'
+        dueDate: &id046
+          type: string
+          format: date
+          description: Due date
+          example: '2026-05-01'
+        fee: &id047
+          type: number
+          format: float
+          description: Fee amount
+          example: 2.5
+        amount: &id048
+          type: number
+          format: float
+          description: Monetary amount
+          example: 99.99
+        createdBy: &id049
+          type: string
+          format: uuid
+          description: Creator user ID
+          example: 550e8400-e29b-41d4-a716-446655440010
+        ownerId: &id050
+          type: string
+          format: uuid
+          description: Owning user ID
+          example: 550e8400-e29b-41d4-a716-446655440000
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (RFC 3339).
+          example: '2026-04-30T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp (RFC 3339).
+          example: '2026-04-30T12:34:56Z'
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    EventList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateEventRequest:
+      type: object
+      properties:
+        slug: *id038
+        title: *id039
+        version: *id040
+        weight: *id041
+        threshold: *id042
+        enabled: *id043
+        active: *id044
+        lastSeenAt: *id045
+        dueDate: *id046
+        fee: *id047
+        amount: *id048
+        createdBy: *id049
+        ownerId: *id050
+      required:
+      - slug
+      - title
+    UpdateEventRequest:
+      type: object
+      properties:
+        slug: *id038
+        title: *id039
+        version: *id040
+        weight: *id041
+        threshold: *id042
+        enabled: *id043
+        active: *id044
+        lastSeenAt: *id045
+        dueDate: *id046
+        fee: *id047
+        amount: *id048
+        createdBy: *id049
+        ownerId: *id050
+      required:
+      - slug
+      - title
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

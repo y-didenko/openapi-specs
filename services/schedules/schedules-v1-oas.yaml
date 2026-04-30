@@ -1,0 +1,653 @@
+openapi: 3.0.3
+info:
+  title: Schedules API
+  description: Generic recurring schedules.
+  version: 2.0.0
+  contact:
+    name: Schedules Team
+    email: schedules@example.com
+servers:
+- url: https://api.example.com/schedules/v1
+  description: Production
+- url: https://staging-api.example.com/schedules/v1
+  description: Staging
+tags:
+- name: Schedules
+  description: Schedules resource operations.
+- name: Notes
+  description: Notes resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /schedules:
+    get:
+      tags:
+      - Schedules
+      summary: List schedules
+      operationId: listSchedule
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of schedules.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Schedules
+      summary: Create schedule
+      operationId: createSchedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateScheduleRequest'
+      responses:
+        '201':
+          description: Schedule created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /schedules/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Schedules
+      summary: Get schedule by ID
+      operationId: getSchedule
+      responses:
+        '200':
+          description: Schedule details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Schedules
+      summary: Update schedule
+      operationId: updateSchedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateScheduleRequest'
+      responses:
+        '200':
+          description: Schedule updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Schedules
+      summary: Delete schedule
+      operationId: deleteSchedule
+      responses:
+        '204':
+          description: Schedule deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /schedules/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Schedules
+      summary: Get audit trail
+      operationId: getScheduleAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /schedules/stats:
+    get:
+      tags:
+      - Schedules
+      summary: Aggregate schedules stats
+      operationId: getScheduleStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /notes:
+    get:
+      tags:
+      - Notes
+      summary: List notes
+      operationId: listNote
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of notes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Notes
+      summary: Create note
+      operationId: createNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNoteRequest'
+      responses:
+        '201':
+          description: Note created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /notes/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Notes
+      summary: Get note by ID
+      operationId: getNote
+      responses:
+        '200':
+          description: Note details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Notes
+      summary: Update note
+      operationId: updateNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNoteRequest'
+      responses:
+        '200':
+          description: Note updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Notes
+      summary: Delete note
+      operationId: deleteNote
+      responses:
+        '204':
+          description: Note deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    Schedule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        name: &id001
+          type: string
+        description: &id002
+          type: string
+        reference: &id003
+          type: string
+        archived: &id004
+          type: boolean
+        scheduledAt: &id005
+          type: string
+          format: date-time
+        currency: &id006
+          type: string
+        updatedBy: &id007
+          type: string
+          format: uuid
+        parentId: &id008
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ScheduleList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Schedule'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateScheduleRequest:
+      type: object
+      properties:
+        name: *id001
+        description: *id002
+        reference: *id003
+        archived: *id004
+        scheduledAt: *id005
+        currency: *id006
+        updatedBy: *id007
+        parentId: *id008
+      required:
+      - name
+      - description
+    UpdateScheduleRequest:
+      type: object
+      properties:
+        name: *id001
+        description: *id002
+        reference: *id003
+        archived: *id004
+        scheduledAt: *id005
+        currency: *id006
+        updatedBy: *id007
+        parentId: *id008
+      required:
+      - name
+      - description
+    Note:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - scheduled
+          - running
+          - completed
+          - failed
+        title: &id009
+          type: string
+        description: &id010
+          type: string
+        weight: &id011
+          type: number
+          format: float
+        count: &id012
+          type: integer
+        visible: &id013
+          type: boolean
+        locked: &id014
+          type: boolean
+        endDate: &id015
+          type: string
+          format: date
+        lastSeenAt: &id016
+          type: string
+          format: date-time
+        currency: &id017
+          type: string
+        parentId: &id018
+          type: string
+          format: uuid
+        tagId: &id019
+          type: string
+          format: uuid
+        email: &id020
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    NoteList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Note'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateNoteRequest:
+      type: object
+      properties:
+        title: *id009
+        description: *id010
+        weight: *id011
+        count: *id012
+        visible: *id013
+        locked: *id014
+        endDate: *id015
+        lastSeenAt: *id016
+        currency: *id017
+        parentId: *id018
+        tagId: *id019
+        email: *id020
+      required:
+      - title
+      - description
+    UpdateNoteRequest:
+      type: object
+      properties:
+        title: *id009
+        description: *id010
+        weight: *id011
+        count: *id012
+        visible: *id013
+        locked: *id014
+        endDate: *id015
+        lastSeenAt: *id016
+        currency: *id017
+        parentId: *id018
+        tagId: *id019
+        email: *id020
+      required:
+      - title
+      - description
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

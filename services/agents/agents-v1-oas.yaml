@@ -1,0 +1,529 @@
+openapi: 3.0.3
+info:
+  title: Agents API
+  description: Real estate agent roster.
+  version: 1.3.4
+  contact:
+    name: Agents Team
+    email: agents@example.com
+servers:
+- url: https://api.example.com/agents/v1
+  description: Production
+- url: https://staging-api.example.com/agents/v1
+  description: Staging
+tags:
+- name: Agents
+  description: Agents resource operations.
+- name: History
+  description: History resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /agents:
+    get:
+      tags:
+      - Agents
+      summary: List agents
+      operationId: listAgent
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of agents.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Agents
+      summary: Create agent
+      operationId: createAgent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAgentRequest'
+      responses:
+        '201':
+          description: Agent created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /agents/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Agents
+      summary: Get agent by ID
+      operationId: getAgent
+      responses:
+        '200':
+          description: Agent details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Agents
+      summary: Update agent
+      operationId: updateAgent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAgentRequest'
+      responses:
+        '200':
+          description: Agent updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Agents
+      summary: Delete agent
+      operationId: deleteAgent
+      responses:
+        '204':
+          description: Agent deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /history:
+    get:
+      tags:
+      - History
+      summary: List history
+      operationId: listHistory
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of history.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - History
+      summary: Create history
+      operationId: createHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHistoryRequest'
+      responses:
+        '201':
+          description: History created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /history/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - History
+      summary: Get history by ID
+      operationId: getHistory
+      responses:
+        '200':
+          description: History details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - History
+      summary: Update history
+      operationId: updateHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHistoryRequest'
+      responses:
+        '200':
+          description: History updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - History
+      summary: Delete history
+      operationId: deleteHistory
+      responses:
+        '204':
+          description: History deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Agent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        displayName: &id001
+          type: string
+        title: &id002
+          type: string
+        summary: &id003
+          type: string
+        threshold: &id004
+          type: number
+          format: float
+        position: &id005
+          type: integer
+        default: &id006
+          type: boolean
+        endDate: &id007
+          type: string
+          format: date
+        updatedBy: &id008
+          type: string
+          format: uuid
+        email: &id009
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    AgentList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Agent'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateAgentRequest:
+      type: object
+      properties:
+        displayName: *id001
+        title: *id002
+        summary: *id003
+        threshold: *id004
+        position: *id005
+        default: *id006
+        endDate: *id007
+        updatedBy: *id008
+        email: *id009
+      required:
+      - displayName
+      - title
+    UpdateAgentRequest:
+      type: object
+      properties:
+        displayName: *id001
+        title: *id002
+        summary: *id003
+        threshold: *id004
+        position: *id005
+        default: *id006
+        endDate: *id007
+        updatedBy: *id008
+        email: *id009
+      required:
+      - displayName
+      - title
+    History:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+        title: &id010
+          type: string
+        reference: &id011
+          type: string
+        summary: &id012
+          type: string
+        capacity: &id013
+          type: integer
+        score: &id014
+          type: number
+          format: float
+        visible: &id015
+          type: boolean
+        locked: &id016
+          type: boolean
+        completedAt: &id017
+          type: string
+          format: date-time
+        publishedAt: &id018
+          type: string
+          format: date-time
+        subtotal: &id019
+          type: number
+          format: float
+        total: &id020
+          type: number
+          format: float
+        createdBy: &id021
+          type: string
+          format: uuid
+        tagId: &id022
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    HistoryList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/History'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateHistoryRequest:
+      type: object
+      properties:
+        title: *id010
+        reference: *id011
+        summary: *id012
+        capacity: *id013
+        score: *id014
+        visible: *id015
+        locked: *id016
+        completedAt: *id017
+        publishedAt: *id018
+        subtotal: *id019
+        total: *id020
+        createdBy: *id021
+        tagId: *id022
+      required:
+      - title
+      - reference
+    UpdateHistoryRequest:
+      type: object
+      properties:
+        title: *id010
+        reference: *id011
+        summary: *id012
+        capacity: *id013
+        score: *id014
+        visible: *id015
+        locked: *id016
+        completedAt: *id017
+        publishedAt: *id018
+        subtotal: *id019
+        total: *id020
+        createdBy: *id021
+        tagId: *id022
+      required:
+      - title
+      - reference
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

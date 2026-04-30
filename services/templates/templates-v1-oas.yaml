@@ -1,0 +1,601 @@
+openapi: 3.0.3
+info:
+  title: Templates API
+  description: Reusable communication templates.
+  version: 1.3.4
+  contact:
+    name: Templates Team
+    email: templates@example.com
+servers:
+- url: https://api.example.com/templates/v1
+  description: Production
+- url: https://staging-api.example.com/templates/v1
+  description: Staging
+tags:
+- name: Templates
+  description: Templates resource operations.
+- name: Imports
+  description: Imports resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /templates:
+    get:
+      tags:
+      - Templates
+      summary: List templates
+      operationId: listTemplate
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of templates.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Templates
+      summary: Create template
+      operationId: createTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTemplateRequest'
+      responses:
+        '201':
+          description: Template created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /templates/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Templates
+      summary: Get template by ID
+      operationId: getTemplate
+      responses:
+        '200':
+          description: Template details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Templates
+      summary: Update template
+      operationId: updateTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTemplateRequest'
+      responses:
+        '200':
+          description: Template updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Templates
+      summary: Delete template
+      operationId: deleteTemplate
+      responses:
+        '204':
+          description: Template deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /templates/search:
+    post:
+      tags:
+      - Templates
+      summary: Advanced search across templates
+      operationId: searchTemplate
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateList'
+      security:
+      - bearerAuth: []
+  /imports:
+    get:
+      tags:
+      - Imports
+      summary: List imports
+      operationId: listImport
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of imports.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Imports
+      summary: Create import
+      operationId: createImport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateImportRequest'
+      responses:
+        '201':
+          description: Import created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /imports/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Imports
+      summary: Get import by ID
+      operationId: getImport
+      responses:
+        '200':
+          description: Import details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Imports
+      summary: Update import
+      operationId: updateImport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateImportRequest'
+      responses:
+        '200':
+          description: Import updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Imports
+      summary: Delete import
+      operationId: deleteImport
+      responses:
+        '204':
+          description: Import deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Template:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - scheduled
+          - running
+          - completed
+          - failed
+        slug: &id001
+          type: string
+        notes: &id002
+          type: string
+        reference: &id003
+          type: string
+        version: &id004
+          type: integer
+        capacity: &id005
+          type: integer
+        visible: &id006
+          type: boolean
+        verified: &id007
+          type: boolean
+        publishedAt: &id008
+          type: string
+          format: date-time
+        scheduledAt: &id009
+          type: string
+          format: date-time
+        tagId: &id010
+          type: string
+          format: uuid
+        email: &id011
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    TemplateList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Template'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateTemplateRequest:
+      type: object
+      properties:
+        slug: *id001
+        notes: *id002
+        reference: *id003
+        version: *id004
+        capacity: *id005
+        visible: *id006
+        verified: *id007
+        publishedAt: *id008
+        scheduledAt: *id009
+        tagId: *id010
+        email: *id011
+      required:
+      - slug
+      - notes
+    UpdateTemplateRequest:
+      type: object
+      properties:
+        slug: *id001
+        notes: *id002
+        reference: *id003
+        version: *id004
+        capacity: *id005
+        visible: *id006
+        verified: *id007
+        publishedAt: *id008
+        scheduledAt: *id009
+        tagId: *id010
+        email: *id011
+      required:
+      - slug
+      - notes
+    Import:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - active
+          - inactive
+          - archived
+        slug: &id012
+          type: string
+        summary: &id013
+          type: string
+        externalId: &id014
+          type: string
+        weight: &id015
+          type: number
+          format: float
+        archived: &id016
+          type: boolean
+        active: &id017
+          type: boolean
+        dueDate: &id018
+          type: string
+          format: date
+        startDate: &id019
+          type: string
+          format: date
+        fee: &id020
+          type: number
+          format: float
+        categoryId: &id021
+          type: string
+          format: uuid
+        websiteUrl: &id022
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ImportList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Import'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateImportRequest:
+      type: object
+      properties:
+        slug: *id012
+        summary: *id013
+        externalId: *id014
+        weight: *id015
+        archived: *id016
+        active: *id017
+        dueDate: *id018
+        startDate: *id019
+        fee: *id020
+        categoryId: *id021
+        websiteUrl: *id022
+      required:
+      - slug
+      - summary
+    UpdateImportRequest:
+      type: object
+      properties:
+        slug: *id012
+        summary: *id013
+        externalId: *id014
+        weight: *id015
+        archived: *id016
+        active: *id017
+        dueDate: *id018
+        startDate: *id019
+        fee: *id020
+        categoryId: *id021
+        websiteUrl: *id022
+      required:
+      - slug
+      - summary
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

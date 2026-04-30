@@ -1,0 +1,306 @@
+openapi: 3.0.3
+info:
+  title: Messages API
+  description: User-to-user messaging.
+  version: 2.1.0
+  contact:
+    name: Messages Team
+    email: messages@example.com
+servers:
+- url: https://api.example.com/messages/v1
+  description: Production
+- url: https://staging-api.example.com/messages/v1
+  description: Staging
+tags:
+- name: Messages
+  description: Messages resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /messages:
+    get:
+      tags:
+      - Messages
+      summary: List messages
+      operationId: listMessage
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of messages.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Messages
+      summary: Create message
+      operationId: createMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMessageRequest'
+      responses:
+        '201':
+          description: Message created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /messages/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Messages
+      summary: Get message by ID
+      operationId: getMessage
+      responses:
+        '200':
+          description: Message details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Messages
+      summary: Update message
+      operationId: updateMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMessageRequest'
+      responses:
+        '200':
+          description: Message updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Messages
+      summary: Delete message
+      operationId: deleteMessage
+      responses:
+        '204':
+          description: Message deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - active
+          - inactive
+          - archived
+        title: &id001
+          type: string
+        notes: &id002
+          type: string
+        description: &id003
+          type: string
+        capacity: &id004
+          type: integer
+        default: &id005
+          type: boolean
+        expiresAt: &id006
+          type: string
+          format: date-time
+        discount: &id007
+          type: number
+          format: float
+        currency: &id008
+          type: string
+        tagId: &id009
+          type: string
+          format: uuid
+        categoryId: &id010
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    MessageList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateMessageRequest:
+      type: object
+      properties:
+        title: *id001
+        notes: *id002
+        description: *id003
+        capacity: *id004
+        default: *id005
+        expiresAt: *id006
+        discount: *id007
+        currency: *id008
+        tagId: *id009
+        categoryId: *id010
+      required:
+      - title
+      - notes
+    UpdateMessageRequest:
+      type: object
+      properties:
+        title: *id001
+        notes: *id002
+        description: *id003
+        capacity: *id004
+        default: *id005
+        expiresAt: *id006
+        discount: *id007
+        currency: *id008
+        tagId: *id009
+        categoryId: *id010
+      required:
+      - title
+      - notes
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

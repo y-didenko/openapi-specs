@@ -1,0 +1,916 @@
+openapi: 3.0.3
+info:
+  title: Food Orders API
+  description: Restaurant order workflow.
+  version: 1.3.4
+  contact:
+    name: Food Orders Team
+    email: foodorders@example.com
+servers:
+- url: https://api.example.com/food-orders/v1
+  description: Production
+- url: https://staging-api.example.com/food-orders/v1
+  description: Staging
+tags:
+- name: Food Orders
+  description: Food Orders resource operations.
+- name: Links
+  description: Links resource operations.
+- name: Rules
+  description: Rules resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /food-orders:
+    get:
+      tags:
+      - Food Orders
+      summary: List food orders
+      operationId: listFoodOrder
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of food orders.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoodOrderList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Food Orders
+      summary: Create food order
+      operationId: createFoodOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFoodOrderRequest'
+      responses:
+        '201':
+          description: Food Order created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoodOrder'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /food-orders/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Food Orders
+      summary: Get food order by ID
+      operationId: getFoodOrder
+      responses:
+        '200':
+          description: Food Order details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoodOrder'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Food Orders
+      summary: Update food order
+      operationId: updateFoodOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFoodOrderRequest'
+      responses:
+        '200':
+          description: Food Order updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoodOrder'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Food Orders
+      summary: Delete food order
+      operationId: deleteFoodOrder
+      responses:
+        '204':
+          description: Food Order deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /food-orders/search:
+    post:
+      tags:
+      - Food Orders
+      summary: Advanced search across food orders
+      operationId: searchFoodOrder
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoodOrderList'
+      security:
+      - bearerAuth: []
+  /links:
+    get:
+      tags:
+      - Links
+      summary: List links
+      operationId: listLink
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of links.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Links
+      summary: Create link
+      operationId: createLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLinkRequest'
+      responses:
+        '201':
+          description: Link created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /links/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Links
+      summary: Get link by ID
+      operationId: getLink
+      responses:
+        '200':
+          description: Link details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Links
+      summary: Update link
+      operationId: updateLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLinkRequest'
+      responses:
+        '200':
+          description: Link updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Links
+      summary: Delete link
+      operationId: deleteLink
+      responses:
+        '204':
+          description: Link deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /links/bulk:
+    post:
+      tags:
+      - Links
+      summary: Bulk create links
+      operationId: bulkCreateLink
+      description: Create up to 500 records in a single request. Returns per-row results.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  maxItems: 500
+                  items:
+                    $ref: '#/components/schemas/CreateLinkRequest'
+              required:
+              - items
+      responses:
+        '200':
+          description: Bulk operation results.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  succeeded:
+                    type: integer
+                  failed:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        index:
+                          type: integer
+                        id:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        error:
+                          type: string
+                          nullable: true
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Links
+      summary: Bulk delete links
+      operationId: bulkDeleteLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+              required:
+              - ids
+      responses:
+        '200':
+          description: Deletion summary.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: integer
+                  skipped:
+                    type: integer
+      security:
+      - bearerAuth: []
+  /rules:
+    get:
+      tags:
+      - Rules
+      summary: List rules
+      operationId: listRule
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of rules.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Rules
+      summary: Create rule
+      operationId: createRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRuleRequest'
+      responses:
+        '201':
+          description: Rule created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /rules/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Rules
+      summary: Get rule by ID
+      operationId: getRule
+      responses:
+        '200':
+          description: Rule details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Rules
+      summary: Update rule
+      operationId: updateRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRuleRequest'
+      responses:
+        '200':
+          description: Rule updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Rules
+      summary: Delete rule
+      operationId: deleteRule
+      responses:
+        '204':
+          description: Rule deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    FoodOrder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+        externalId: &id001
+          type: string
+        notes: &id002
+          type: string
+        displayName: &id003
+          type: string
+        verified: &id004
+          type: boolean
+        locked: &id005
+          type: boolean
+        scheduledAt: &id006
+          type: string
+          format: date-time
+        publishedAt: &id007
+          type: string
+          format: date-time
+        amount: &id008
+          type: number
+          format: float
+        subtotal: &id009
+          type: number
+          format: float
+        ownerId: &id010
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    FoodOrderList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/FoodOrder'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateFoodOrderRequest:
+      type: object
+      properties:
+        externalId: *id001
+        notes: *id002
+        displayName: *id003
+        verified: *id004
+        locked: *id005
+        scheduledAt: *id006
+        publishedAt: *id007
+        amount: *id008
+        subtotal: *id009
+        ownerId: *id010
+      required:
+      - externalId
+      - notes
+    UpdateFoodOrderRequest:
+      type: object
+      properties:
+        externalId: *id001
+        notes: *id002
+        displayName: *id003
+        verified: *id004
+        locked: *id005
+        scheduledAt: *id006
+        publishedAt: *id007
+        amount: *id008
+        subtotal: *id009
+        ownerId: *id010
+      required:
+      - externalId
+      - notes
+    Link:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+        notes: &id011
+          type: string
+        summary: &id012
+          type: string
+        externalId: &id013
+          type: string
+        score: &id014
+          type: number
+          format: float
+        position: &id015
+          type: integer
+        archived: &id016
+          type: boolean
+        endDate: &id017
+          type: string
+          format: date
+        scheduledAt: &id018
+          type: string
+          format: date-time
+        organizationId: &id019
+          type: string
+          format: uuid
+        websiteUrl: &id020
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LinkList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLinkRequest:
+      type: object
+      properties:
+        notes: *id011
+        summary: *id012
+        externalId: *id013
+        score: *id014
+        position: *id015
+        archived: *id016
+        endDate: *id017
+        scheduledAt: *id018
+        organizationId: *id019
+        websiteUrl: *id020
+      required:
+      - notes
+      - summary
+    UpdateLinkRequest:
+      type: object
+      properties:
+        notes: *id011
+        summary: *id012
+        externalId: *id013
+        score: *id014
+        position: *id015
+        archived: *id016
+        endDate: *id017
+        scheduledAt: *id018
+        organizationId: *id019
+        websiteUrl: *id020
+      required:
+      - notes
+      - summary
+    Rule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - active
+          - inactive
+          - archived
+        slug: &id021
+          type: string
+        description: &id022
+          type: string
+        displayName: &id023
+          type: string
+        default: &id024
+          type: boolean
+        startDate: &id025
+          type: string
+          format: date
+        subtotal: &id026
+          type: number
+          format: float
+        currency: &id027
+          type: string
+        teamId: &id028
+          type: string
+          format: uuid
+        ownerId: &id029
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    RuleList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Rule'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateRuleRequest:
+      type: object
+      properties:
+        slug: *id021
+        description: *id022
+        displayName: *id023
+        default: *id024
+        startDate: *id025
+        subtotal: *id026
+        currency: *id027
+        teamId: *id028
+        ownerId: *id029
+      required:
+      - slug
+      - description
+    UpdateRuleRequest:
+      type: object
+      properties:
+        slug: *id021
+        description: *id022
+        displayName: *id023
+        default: *id024
+        startDate: *id025
+        subtotal: *id026
+        currency: *id027
+        teamId: *id028
+        ownerId: *id029
+      required:
+      - slug
+      - description
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

@@ -1,0 +1,299 @@
+openapi: 3.0.3
+info:
+  title: Gift Cards API
+  description: Gift card issuance, redemption, and balance tracking.
+  version: 1.0.0
+  contact:
+    name: Gift Cards Team
+    email: giftcards@example.com
+servers:
+- url: https://api.example.com/gift-cards/v1
+  description: Production
+- url: https://staging-api.example.com/gift-cards/v1
+  description: Staging
+tags:
+- name: Gift Cards
+  description: Gift Cards resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /gift-cards:
+    get:
+      tags:
+      - Gift Cards
+      summary: List gift cards
+      operationId: listGiftCard
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of gift cards.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GiftCardList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Gift Cards
+      summary: Create gift card
+      operationId: createGiftCard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGiftCardRequest'
+      responses:
+        '201':
+          description: Gift Card created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GiftCard'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /gift-cards/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Gift Cards
+      summary: Get gift card by ID
+      operationId: getGiftCard
+      responses:
+        '200':
+          description: Gift Card details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GiftCard'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Gift Cards
+      summary: Update gift card
+      operationId: updateGiftCard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGiftCardRequest'
+      responses:
+        '200':
+          description: Gift Card updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GiftCard'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Gift Cards
+      summary: Delete gift card
+      operationId: deleteGiftCard
+      responses:
+        '204':
+          description: Gift Card deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    GiftCard:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        description: &id001
+          type: string
+        code: &id002
+          type: string
+        score: &id003
+          type: number
+          format: float
+        verified: &id004
+          type: boolean
+        default: &id005
+          type: boolean
+        startDate: &id006
+          type: string
+          format: date
+        scheduledAt: &id007
+          type: string
+          format: date-time
+        categoryId: &id008
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    GiftCardList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/GiftCard'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateGiftCardRequest:
+      type: object
+      properties:
+        description: *id001
+        code: *id002
+        score: *id003
+        verified: *id004
+        default: *id005
+        startDate: *id006
+        scheduledAt: *id007
+        categoryId: *id008
+      required:
+      - description
+      - code
+    UpdateGiftCardRequest:
+      type: object
+      properties:
+        description: *id001
+        code: *id002
+        score: *id003
+        verified: *id004
+        default: *id005
+        startDate: *id006
+        scheduledAt: *id007
+        categoryId: *id008
+      required:
+      - description
+      - code
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

@@ -1,0 +1,905 @@
+openapi: 3.0.3
+info:
+  title: Locks API
+  description: Distributed lock service.
+  version: 1.2.0
+  contact:
+    name: Locks Team
+    email: locks@example.com
+servers:
+- url: https://api.example.com/locks/v1
+  description: Production
+- url: https://staging-api.example.com/locks/v1
+  description: Staging
+tags:
+- name: Locks
+  description: Locks resource operations.
+- name: Logs
+  description: Logs resource operations.
+- name: Imports
+  description: Imports resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /locks:
+    get:
+      tags:
+      - Locks
+      summary: List locks
+      operationId: listLock
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of locks.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LockList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Locks
+      summary: Create lock
+      operationId: createLock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLockRequest'
+      responses:
+        '201':
+          description: Lock created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lock'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /locks/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Locks
+      summary: Get lock by ID
+      operationId: getLock
+      responses:
+        '200':
+          description: Lock details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lock'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Locks
+      summary: Update lock
+      operationId: updateLock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLockRequest'
+      responses:
+        '200':
+          description: Lock updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lock'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Locks
+      summary: Delete lock
+      operationId: deleteLock
+      responses:
+        '204':
+          description: Lock deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /locks/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Locks
+      summary: Get audit trail
+      operationId: getLockAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /logs:
+    get:
+      tags:
+      - Logs
+      summary: List logs
+      operationId: listLog
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of logs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Logs
+      summary: Create log
+      operationId: createLog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLogRequest'
+      responses:
+        '201':
+          description: Log created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Log'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /logs/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Logs
+      summary: Get log by ID
+      operationId: getLog
+      responses:
+        '200':
+          description: Log details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Log'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Logs
+      summary: Update log
+      operationId: updateLog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLogRequest'
+      responses:
+        '200':
+          description: Log updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Log'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Logs
+      summary: Delete log
+      operationId: deleteLog
+      responses:
+        '204':
+          description: Log deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /logs/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Logs
+      summary: Get audit trail
+      operationId: getLogAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /imports:
+    get:
+      tags:
+      - Imports
+      summary: List imports
+      operationId: listImport
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of imports.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Imports
+      summary: Create import
+      operationId: createImport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateImportRequest'
+      responses:
+        '201':
+          description: Import created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /imports/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Imports
+      summary: Get import by ID
+      operationId: getImport
+      responses:
+        '200':
+          description: Import details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Imports
+      summary: Update import
+      operationId: updateImport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateImportRequest'
+      responses:
+        '200':
+          description: Import updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Imports
+      summary: Delete import
+      operationId: deleteImport
+      responses:
+        '204':
+          description: Import deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /imports/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Imports
+      summary: Get audit trail
+      operationId: getImportAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    Lock:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        notes: &id001
+          type: string
+        slug: &id002
+          type: string
+        code: &id003
+          type: string
+        active: &id004
+          type: boolean
+        publishedAt: &id005
+          type: string
+          format: date-time
+        endDate: &id006
+          type: string
+          format: date
+        subtotal: &id007
+          type: number
+          format: float
+        ownerId: &id008
+          type: string
+          format: uuid
+        categoryId: &id009
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LockList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Lock'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLockRequest:
+      type: object
+      properties:
+        notes: *id001
+        slug: *id002
+        code: *id003
+        active: *id004
+        publishedAt: *id005
+        endDate: *id006
+        subtotal: *id007
+        ownerId: *id008
+        categoryId: *id009
+      required:
+      - notes
+      - slug
+    UpdateLockRequest:
+      type: object
+      properties:
+        notes: *id001
+        slug: *id002
+        code: *id003
+        active: *id004
+        publishedAt: *id005
+        endDate: *id006
+        subtotal: *id007
+        ownerId: *id008
+        categoryId: *id009
+      required:
+      - notes
+      - slug
+    Log:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        summary: &id010
+          type: string
+        reference: &id011
+          type: string
+        slug: &id012
+          type: string
+        score: &id013
+          type: number
+          format: float
+        threshold: &id014
+          type: number
+          format: float
+        enabled: &id015
+          type: boolean
+        visible: &id016
+          type: boolean
+        startDate: &id017
+          type: string
+          format: date
+        publishedAt: &id018
+          type: string
+          format: date-time
+        discount: &id019
+          type: number
+          format: float
+        currency: &id020
+          type: string
+        organizationId: &id021
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LogList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Log'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLogRequest:
+      type: object
+      properties:
+        summary: *id010
+        reference: *id011
+        slug: *id012
+        score: *id013
+        threshold: *id014
+        enabled: *id015
+        visible: *id016
+        startDate: *id017
+        publishedAt: *id018
+        discount: *id019
+        currency: *id020
+        organizationId: *id021
+      required:
+      - summary
+      - reference
+    UpdateLogRequest:
+      type: object
+      properties:
+        summary: *id010
+        reference: *id011
+        slug: *id012
+        score: *id013
+        threshold: *id014
+        enabled: *id015
+        visible: *id016
+        startDate: *id017
+        publishedAt: *id018
+        discount: *id019
+        currency: *id020
+        organizationId: *id021
+      required:
+      - summary
+      - reference
+    Import:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        name: &id022
+          type: string
+        displayName: &id023
+          type: string
+        score: &id024
+          type: number
+          format: float
+        rank: &id025
+          type: integer
+        visible: &id026
+          type: boolean
+        active: &id027
+          type: boolean
+        dueDate: &id028
+          type: string
+          format: date
+        discount: &id029
+          type: number
+          format: float
+        parentId: &id030
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ImportList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Import'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateImportRequest:
+      type: object
+      properties:
+        name: *id022
+        displayName: *id023
+        score: *id024
+        rank: *id025
+        visible: *id026
+        active: *id027
+        dueDate: *id028
+        discount: *id029
+        parentId: *id030
+      required:
+      - name
+      - displayName
+    UpdateImportRequest:
+      type: object
+      properties:
+        name: *id022
+        displayName: *id023
+        score: *id024
+        rank: *id025
+        visible: *id026
+        active: *id027
+        dueDate: *id028
+        discount: *id029
+        parentId: *id030
+      required:
+      - name
+      - displayName
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

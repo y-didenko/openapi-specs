@@ -1,0 +1,567 @@
+openapi: 3.0.3
+info:
+  title: Automations API
+  description: Automation rules and triggers.
+  version: 1.1.0
+  contact:
+    name: Automations Team
+    email: automations@example.com
+servers:
+- url: https://api.example.com/automations/v1
+  description: Production
+- url: https://staging-api.example.com/automations/v1
+  description: Staging
+tags:
+- name: Automations
+  description: Automations resource operations.
+- name: Notes
+  description: Notes resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /automations:
+    get:
+      tags:
+      - Automations
+      summary: List automations
+      operationId: listAutomation
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of automations.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutomationList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Automations
+      summary: Create automation
+      operationId: createAutomation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAutomationRequest'
+      responses:
+        '201':
+          description: Automation created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Automation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /automations/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Automations
+      summary: Get automation by ID
+      operationId: getAutomation
+      responses:
+        '200':
+          description: Automation details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Automation'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Automations
+      summary: Update automation
+      operationId: updateAutomation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAutomationRequest'
+      responses:
+        '200':
+          description: Automation updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Automation'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Automations
+      summary: Delete automation
+      operationId: deleteAutomation
+      responses:
+        '204':
+          description: Automation deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /automations/stats:
+    get:
+      tags:
+      - Automations
+      summary: Aggregate automations stats
+      operationId: getAutomationStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /notes:
+    get:
+      tags:
+      - Notes
+      summary: List notes
+      operationId: listNote
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of notes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Notes
+      summary: Create note
+      operationId: createNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNoteRequest'
+      responses:
+        '201':
+          description: Note created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /notes/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Notes
+      summary: Get note by ID
+      operationId: getNote
+      responses:
+        '200':
+          description: Note details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Notes
+      summary: Update note
+      operationId: updateNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNoteRequest'
+      responses:
+        '200':
+          description: Note updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Notes
+      summary: Delete note
+      operationId: deleteNote
+      responses:
+        '204':
+          description: Note deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Automation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        name: &id001
+          type: string
+        notes: &id002
+          type: string
+        summary: &id003
+          type: string
+        verified: &id004
+          type: boolean
+        visible: &id005
+          type: boolean
+        scheduledAt: &id006
+          type: string
+          format: date-time
+        publishedAt: &id007
+          type: string
+          format: date-time
+        organizationId: &id008
+          type: string
+          format: uuid
+        teamId: &id009
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    AutomationList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Automation'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateAutomationRequest:
+      type: object
+      properties:
+        name: *id001
+        notes: *id002
+        summary: *id003
+        verified: *id004
+        visible: *id005
+        scheduledAt: *id006
+        publishedAt: *id007
+        organizationId: *id008
+        teamId: *id009
+      required:
+      - name
+      - notes
+    UpdateAutomationRequest:
+      type: object
+      properties:
+        name: *id001
+        notes: *id002
+        summary: *id003
+        verified: *id004
+        visible: *id005
+        scheduledAt: *id006
+        publishedAt: *id007
+        organizationId: *id008
+        teamId: *id009
+      required:
+      - name
+      - notes
+    Note:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        slug: &id010
+          type: string
+        notes: &id011
+          type: string
+        archived: &id012
+          type: boolean
+        locked: &id013
+          type: boolean
+        expiresAt: &id014
+          type: string
+          format: date-time
+        lastSeenAt: &id015
+          type: string
+          format: date-time
+        amount: &id016
+          type: number
+          format: float
+        subtotal: &id017
+          type: number
+          format: float
+        createdBy: &id018
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    NoteList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Note'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateNoteRequest:
+      type: object
+      properties:
+        slug: *id010
+        notes: *id011
+        archived: *id012
+        locked: *id013
+        expiresAt: *id014
+        lastSeenAt: *id015
+        amount: *id016
+        subtotal: *id017
+        createdBy: *id018
+      required:
+      - slug
+      - notes
+    UpdateNoteRequest:
+      type: object
+      properties:
+        slug: *id010
+        notes: *id011
+        archived: *id012
+        locked: *id013
+        expiresAt: *id014
+        lastSeenAt: *id015
+        amount: *id016
+        subtotal: *id017
+        createdBy: *id018
+      required:
+      - slug
+      - notes
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

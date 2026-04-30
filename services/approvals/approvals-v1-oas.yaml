@@ -1,0 +1,521 @@
+openapi: 3.0.3
+info:
+  title: Approvals API
+  description: Generic approval workflow.
+  version: 1.1.0
+  contact:
+    name: Approvals Team
+    email: approvals@example.com
+servers:
+- url: https://api.example.com/approvals/v1
+  description: Production
+- url: https://staging-api.example.com/approvals/v1
+  description: Staging
+tags:
+- name: Approvals
+  description: Approvals resource operations.
+- name: Notes
+  description: Notes resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /approvals:
+    get:
+      tags:
+      - Approvals
+      summary: List approvals
+      operationId: listApproval
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of approvals.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Approvals
+      summary: Create approval
+      operationId: createApproval
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApprovalRequest'
+      responses:
+        '201':
+          description: Approval created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Approval'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /approvals/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Approvals
+      summary: Get approval by ID
+      operationId: getApproval
+      responses:
+        '200':
+          description: Approval details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Approval'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Approvals
+      summary: Update approval
+      operationId: updateApproval
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateApprovalRequest'
+      responses:
+        '200':
+          description: Approval updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Approval'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Approvals
+      summary: Delete approval
+      operationId: deleteApproval
+      responses:
+        '204':
+          description: Approval deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /notes:
+    get:
+      tags:
+      - Notes
+      summary: List notes
+      operationId: listNote
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of notes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Notes
+      summary: Create note
+      operationId: createNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNoteRequest'
+      responses:
+        '201':
+          description: Note created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /notes/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Notes
+      summary: Get note by ID
+      operationId: getNote
+      responses:
+        '200':
+          description: Note details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Notes
+      summary: Update note
+      operationId: updateNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNoteRequest'
+      responses:
+        '200':
+          description: Note updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Notes
+      summary: Delete note
+      operationId: deleteNote
+      responses:
+        '204':
+          description: Note deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Approval:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - active
+          - inactive
+          - archived
+        summary: &id001
+          type: string
+        externalId: &id002
+          type: string
+        code: &id003
+          type: string
+        default: &id004
+          type: boolean
+        expiresAt: &id005
+          type: string
+          format: date-time
+        startDate: &id006
+          type: string
+          format: date
+        subtotal: &id007
+          type: number
+          format: float
+        teamId: &id008
+          type: string
+          format: uuid
+        updatedBy: &id009
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ApprovalList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Approval'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateApprovalRequest:
+      type: object
+      properties:
+        summary: *id001
+        externalId: *id002
+        code: *id003
+        default: *id004
+        expiresAt: *id005
+        startDate: *id006
+        subtotal: *id007
+        teamId: *id008
+        updatedBy: *id009
+      required:
+      - summary
+      - externalId
+    UpdateApprovalRequest:
+      type: object
+      properties:
+        summary: *id001
+        externalId: *id002
+        code: *id003
+        default: *id004
+        expiresAt: *id005
+        startDate: *id006
+        subtotal: *id007
+        teamId: *id008
+        updatedBy: *id009
+      required:
+      - summary
+      - externalId
+    Note:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+        externalId: &id010
+          type: string
+        reference: &id011
+          type: string
+        description: &id012
+          type: string
+        capacity: &id013
+          type: integer
+        active: &id014
+          type: boolean
+        visible: &id015
+          type: boolean
+        publishedAt: &id016
+          type: string
+          format: date-time
+        amount: &id017
+          type: number
+          format: float
+        subtotal: &id018
+          type: number
+          format: float
+        tagId: &id019
+          type: string
+          format: uuid
+        parentId: &id020
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    NoteList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Note'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateNoteRequest:
+      type: object
+      properties:
+        externalId: *id010
+        reference: *id011
+        description: *id012
+        capacity: *id013
+        active: *id014
+        visible: *id015
+        publishedAt: *id016
+        amount: *id017
+        subtotal: *id018
+        tagId: *id019
+        parentId: *id020
+      required:
+      - externalId
+      - reference
+    UpdateNoteRequest:
+      type: object
+      properties:
+        externalId: *id010
+        reference: *id011
+        description: *id012
+        capacity: *id013
+        active: *id014
+        visible: *id015
+        publishedAt: *id016
+        amount: *id017
+        subtotal: *id018
+        tagId: *id019
+        parentId: *id020
+      required:
+      - externalId
+      - reference
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

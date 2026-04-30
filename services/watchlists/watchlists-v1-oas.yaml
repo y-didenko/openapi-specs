@@ -1,0 +1,517 @@
+openapi: 3.0.3
+info:
+  title: Watchlists API
+  description: User watchlists.
+  version: 1.0.0
+  contact:
+    name: Watchlists Team
+    email: watchlists@example.com
+servers:
+- url: https://api.example.com/watchlists/v1
+  description: Production
+- url: https://staging-api.example.com/watchlists/v1
+  description: Staging
+tags:
+- name: Watchlists
+  description: Watchlists resource operations.
+- name: Exports
+  description: Exports resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /watchlists:
+    get:
+      tags:
+      - Watchlists
+      summary: List watchlists
+      operationId: listWatchlist
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of watchlists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WatchlistList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Watchlists
+      summary: Create watchlist
+      operationId: createWatchlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWatchlistRequest'
+      responses:
+        '201':
+          description: Watchlist created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Watchlist'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /watchlists/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Watchlists
+      summary: Get watchlist by ID
+      operationId: getWatchlist
+      responses:
+        '200':
+          description: Watchlist details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Watchlist'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Watchlists
+      summary: Update watchlist
+      operationId: updateWatchlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWatchlistRequest'
+      responses:
+        '200':
+          description: Watchlist updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Watchlist'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Watchlists
+      summary: Delete watchlist
+      operationId: deleteWatchlist
+      responses:
+        '204':
+          description: Watchlist deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /exports:
+    get:
+      tags:
+      - Exports
+      summary: List exports
+      operationId: listExport
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of exports.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Exports
+      summary: Create export
+      operationId: createExport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExportRequest'
+      responses:
+        '201':
+          description: Export created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Export'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /exports/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Exports
+      summary: Get export by ID
+      operationId: getExport
+      responses:
+        '200':
+          description: Export details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Export'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Exports
+      summary: Update export
+      operationId: updateExport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExportRequest'
+      responses:
+        '200':
+          description: Export updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Export'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Exports
+      summary: Delete export
+      operationId: deleteExport
+      responses:
+        '204':
+          description: Export deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Watchlist:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        description: &id001
+          type: string
+        slug: &id002
+          type: string
+        externalId: &id003
+          type: string
+        archived: &id004
+          type: boolean
+        completedAt: &id005
+          type: string
+          format: date-time
+        publishedAt: &id006
+          type: string
+          format: date-time
+        teamId: &id007
+          type: string
+          format: uuid
+        websiteUrl: &id008
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    WatchlistList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Watchlist'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateWatchlistRequest:
+      type: object
+      properties:
+        description: *id001
+        slug: *id002
+        externalId: *id003
+        archived: *id004
+        completedAt: *id005
+        publishedAt: *id006
+        teamId: *id007
+        websiteUrl: *id008
+      required:
+      - description
+      - slug
+    UpdateWatchlistRequest:
+      type: object
+      properties:
+        description: *id001
+        slug: *id002
+        externalId: *id003
+        archived: *id004
+        completedAt: *id005
+        publishedAt: *id006
+        teamId: *id007
+        websiteUrl: *id008
+      required:
+      - description
+      - slug
+    Export:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        code: &id009
+          type: string
+        summary: &id010
+          type: string
+        title: &id011
+          type: string
+        active: &id012
+          type: boolean
+        archived: &id013
+          type: boolean
+        scheduledAt: &id014
+          type: string
+          format: date-time
+        publishedAt: &id015
+          type: string
+          format: date-time
+        fee: &id016
+          type: number
+          format: float
+        total: &id017
+          type: number
+          format: float
+        teamId: &id018
+          type: string
+          format: uuid
+        createdBy: &id019
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ExportList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Export'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateExportRequest:
+      type: object
+      properties:
+        code: *id009
+        summary: *id010
+        title: *id011
+        active: *id012
+        archived: *id013
+        scheduledAt: *id014
+        publishedAt: *id015
+        fee: *id016
+        total: *id017
+        teamId: *id018
+        createdBy: *id019
+      required:
+      - code
+      - summary
+    UpdateExportRequest:
+      type: object
+      properties:
+        code: *id009
+        summary: *id010
+        title: *id011
+        active: *id012
+        archived: *id013
+        scheduledAt: *id014
+        publishedAt: *id015
+        fee: *id016
+        total: *id017
+        teamId: *id018
+        createdBy: *id019
+      required:
+      - code
+      - summary
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

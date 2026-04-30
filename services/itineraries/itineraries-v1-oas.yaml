@@ -1,0 +1,387 @@
+openapi: 3.0.3
+info:
+  title: Itineraries API
+  description: Multi-leg trip itineraries.
+  version: 1.3.4
+  contact:
+    name: Itineraries Team
+    email: itineraries@example.com
+servers:
+- url: https://api.example.com/itineraries/v1
+  description: Production
+- url: https://staging-api.example.com/itineraries/v1
+  description: Staging
+tags:
+- name: Itineraries
+  description: Itineraries resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /itineraries:
+    get:
+      tags:
+      - Itineraries
+      summary: List itineraries
+      operationId: listItinerary
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of itineraries.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItineraryList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Itineraries
+      summary: Create itinerary
+      operationId: createItinerary
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateItineraryRequest'
+      responses:
+        '201':
+          description: Itinerary created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Itinerary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /itineraries/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Itineraries
+      summary: Get itinerary by ID
+      operationId: getItinerary
+      responses:
+        '200':
+          description: Itinerary details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Itinerary'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Itineraries
+      summary: Update itinerary
+      operationId: updateItinerary
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateItineraryRequest'
+      responses:
+        '200':
+          description: Itinerary updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Itinerary'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Itineraries
+      summary: Delete itinerary
+      operationId: deleteItinerary
+      responses:
+        '204':
+          description: Itinerary deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /itineraries/search:
+    post:
+      tags:
+      - Itineraries
+      summary: Advanced search across itineraries
+      operationId: searchItinerary
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItineraryList'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Itinerary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+        notes: &id001
+          type: string
+        displayName: &id002
+          type: string
+        weight: &id003
+          type: number
+          format: float
+        rank: &id004
+          type: integer
+        enabled: &id005
+          type: boolean
+        default: &id006
+          type: boolean
+        endDate: &id007
+          type: string
+          format: date
+        subtotal: &id008
+          type: number
+          format: float
+        price: &id009
+          type: number
+          format: float
+        organizationId: &id010
+          type: string
+          format: uuid
+        categoryId: &id011
+          type: string
+          format: uuid
+        email: &id012
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ItineraryList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Itinerary'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateItineraryRequest:
+      type: object
+      properties:
+        notes: *id001
+        displayName: *id002
+        weight: *id003
+        rank: *id004
+        enabled: *id005
+        default: *id006
+        endDate: *id007
+        subtotal: *id008
+        price: *id009
+        organizationId: *id010
+        categoryId: *id011
+        email: *id012
+      required:
+      - notes
+      - displayName
+    UpdateItineraryRequest:
+      type: object
+      properties:
+        notes: *id001
+        displayName: *id002
+        weight: *id003
+        rank: *id004
+        enabled: *id005
+        default: *id006
+        endDate: *id007
+        subtotal: *id008
+        price: *id009
+        organizationId: *id010
+        categoryId: *id011
+        email: *id012
+      required:
+      - notes
+      - displayName
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

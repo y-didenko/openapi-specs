@@ -1,0 +1,1088 @@
+openapi: 3.0.3
+info:
+  title: Feeds API
+  description: RSS-style activity feeds.
+  version: 2.1.0
+  contact:
+    name: Feeds Team
+    email: feeds@example.com
+servers:
+- url: https://api.example.com/feeds/v1
+  description: Production
+- url: https://staging-api.example.com/feeds/v1
+  description: Staging
+tags:
+- name: Feeds
+  description: Feeds resource operations.
+- name: Shares
+  description: Shares resource operations.
+- name: Events
+  description: Events resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /feeds:
+    get:
+      tags:
+      - Feeds
+      summary: List feeds
+      operationId: listFeed
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of feeds.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Feeds
+      summary: Create feed
+      operationId: createFeed
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFeedRequest'
+      responses:
+        '201':
+          description: Feed created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /feeds/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Feeds
+      summary: Get feed by ID
+      operationId: getFeed
+      responses:
+        '200':
+          description: Feed details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feed'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Feeds
+      summary: Update feed
+      operationId: updateFeed
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFeedRequest'
+      responses:
+        '200':
+          description: Feed updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feed'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Feeds
+      summary: Delete feed
+      operationId: deleteFeed
+      responses:
+        '204':
+          description: Feed deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /feeds/stats:
+    get:
+      tags:
+      - Feeds
+      summary: Aggregate feeds stats
+      operationId: getFeedStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /feeds/bulk:
+    post:
+      tags:
+      - Feeds
+      summary: Bulk create feeds
+      operationId: bulkCreateFeed
+      description: Create up to 500 records in a single request. Returns per-row results.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  maxItems: 500
+                  items:
+                    $ref: '#/components/schemas/CreateFeedRequest'
+              required:
+              - items
+      responses:
+        '200':
+          description: Bulk operation results.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  succeeded:
+                    type: integer
+                  failed:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        index:
+                          type: integer
+                        id:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        error:
+                          type: string
+                          nullable: true
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Feeds
+      summary: Bulk delete feeds
+      operationId: bulkDeleteFeed
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+              required:
+              - ids
+      responses:
+        '200':
+          description: Deletion summary.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: integer
+                  skipped:
+                    type: integer
+      security:
+      - bearerAuth: []
+  /shares:
+    get:
+      tags:
+      - Shares
+      summary: List shares
+      operationId: listShare
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of shares.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Shares
+      summary: Create share
+      operationId: createShare
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShareRequest'
+      responses:
+        '201':
+          description: Share created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /shares/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Shares
+      summary: Get share by ID
+      operationId: getShare
+      responses:
+        '200':
+          description: Share details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Shares
+      summary: Update share
+      operationId: updateShare
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateShareRequest'
+      responses:
+        '200':
+          description: Share updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Shares
+      summary: Delete share
+      operationId: deleteShare
+      responses:
+        '204':
+          description: Share deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /shares/bulk:
+    post:
+      tags:
+      - Shares
+      summary: Bulk create shares
+      operationId: bulkCreateShare
+      description: Create up to 500 records in a single request. Returns per-row results.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  maxItems: 500
+                  items:
+                    $ref: '#/components/schemas/CreateShareRequest'
+              required:
+              - items
+      responses:
+        '200':
+          description: Bulk operation results.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  succeeded:
+                    type: integer
+                  failed:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        index:
+                          type: integer
+                        id:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        error:
+                          type: string
+                          nullable: true
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Shares
+      summary: Bulk delete shares
+      operationId: bulkDeleteShare
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+              required:
+              - ids
+      responses:
+        '200':
+          description: Deletion summary.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: integer
+                  skipped:
+                    type: integer
+      security:
+      - bearerAuth: []
+  /events:
+    get:
+      tags:
+      - Events
+      summary: List events
+      operationId: listEvent
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of events.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Events
+      summary: Create event
+      operationId: createEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventRequest'
+      responses:
+        '201':
+          description: Event created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /events/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Events
+      summary: Get event by ID
+      operationId: getEvent
+      responses:
+        '200':
+          description: Event details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Events
+      summary: Update event
+      operationId: updateEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEventRequest'
+      responses:
+        '200':
+          description: Event updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Events
+      summary: Delete event
+      operationId: deleteEvent
+      responses:
+        '204':
+          description: Event deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /events/bulk:
+    post:
+      tags:
+      - Events
+      summary: Bulk create events
+      operationId: bulkCreateEvent
+      description: Create up to 500 records in a single request. Returns per-row results.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  maxItems: 500
+                  items:
+                    $ref: '#/components/schemas/CreateEventRequest'
+              required:
+              - items
+      responses:
+        '200':
+          description: Bulk operation results.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  succeeded:
+                    type: integer
+                  failed:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        index:
+                          type: integer
+                        id:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        error:
+                          type: string
+                          nullable: true
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Events
+      summary: Bulk delete events
+      operationId: bulkDeleteEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+              required:
+              - ids
+      responses:
+        '200':
+          description: Deletion summary.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: integer
+                  skipped:
+                    type: integer
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    Feed:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        notes: &id001
+          type: string
+        displayName: &id002
+          type: string
+        count: &id003
+          type: integer
+        capacity: &id004
+          type: integer
+        visible: &id005
+          type: boolean
+        completedAt: &id006
+          type: string
+          format: date-time
+        dueDate: &id007
+          type: string
+          format: date
+        total: &id008
+          type: number
+          format: float
+        teamId: &id009
+          type: string
+          format: uuid
+        parentId: &id010
+          type: string
+          format: uuid
+        phone: &id011
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    FeedList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Feed'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateFeedRequest:
+      type: object
+      properties:
+        notes: *id001
+        displayName: *id002
+        count: *id003
+        capacity: *id004
+        visible: *id005
+        completedAt: *id006
+        dueDate: *id007
+        total: *id008
+        teamId: *id009
+        parentId: *id010
+        phone: *id011
+      required:
+      - notes
+      - displayName
+    UpdateFeedRequest:
+      type: object
+      properties:
+        notes: *id001
+        displayName: *id002
+        count: *id003
+        capacity: *id004
+        visible: *id005
+        completedAt: *id006
+        dueDate: *id007
+        total: *id008
+        teamId: *id009
+        parentId: *id010
+        phone: *id011
+      required:
+      - notes
+      - displayName
+    Share:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+        code: &id012
+          type: string
+        externalId: &id013
+          type: string
+        score: &id014
+          type: number
+          format: float
+        visible: &id015
+          type: boolean
+        endDate: &id016
+          type: string
+          format: date
+        scheduledAt: &id017
+          type: string
+          format: date-time
+        price: &id018
+          type: number
+          format: float
+        amount: &id019
+          type: number
+          format: float
+        tagId: &id020
+          type: string
+          format: uuid
+        categoryId: &id021
+          type: string
+          format: uuid
+        phone: &id022
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ShareList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Share'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateShareRequest:
+      type: object
+      properties:
+        code: *id012
+        externalId: *id013
+        score: *id014
+        visible: *id015
+        endDate: *id016
+        scheduledAt: *id017
+        price: *id018
+        amount: *id019
+        tagId: *id020
+        categoryId: *id021
+        phone: *id022
+      required:
+      - code
+      - externalId
+    UpdateShareRequest:
+      type: object
+      properties:
+        code: *id012
+        externalId: *id013
+        score: *id014
+        visible: *id015
+        endDate: *id016
+        scheduledAt: *id017
+        price: *id018
+        amount: *id019
+        tagId: *id020
+        categoryId: *id021
+        phone: *id022
+      required:
+      - code
+      - externalId
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        code: &id023
+          type: string
+        title: &id024
+          type: string
+        externalId: &id025
+          type: string
+        priority: &id026
+          type: integer
+        default: &id027
+          type: boolean
+        endDate: &id028
+          type: string
+          format: date
+        publishedAt: &id029
+          type: string
+          format: date-time
+        fee: &id030
+          type: number
+          format: float
+        subtotal: &id031
+          type: number
+          format: float
+        updatedBy: &id032
+          type: string
+          format: uuid
+        createdBy: &id033
+          type: string
+          format: uuid
+        email: &id034
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    EventList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateEventRequest:
+      type: object
+      properties:
+        code: *id023
+        title: *id024
+        externalId: *id025
+        priority: *id026
+        default: *id027
+        endDate: *id028
+        publishedAt: *id029
+        fee: *id030
+        subtotal: *id031
+        updatedBy: *id032
+        createdBy: *id033
+        email: *id034
+      required:
+      - code
+      - title
+    UpdateEventRequest:
+      type: object
+      properties:
+        code: *id023
+        title: *id024
+        externalId: *id025
+        priority: *id026
+        default: *id027
+        endDate: *id028
+        publishedAt: *id029
+        fee: *id030
+        subtotal: *id031
+        updatedBy: *id032
+        createdBy: *id033
+        email: *id034
+      required:
+      - code
+      - title
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

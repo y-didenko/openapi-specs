@@ -1,0 +1,517 @@
+openapi: 3.0.3
+info:
+  title: Flights API
+  description: Flight search and seat maps.
+  version: 1.2.0
+  contact:
+    name: Flights Team
+    email: flights@example.com
+servers:
+- url: https://api.example.com/flights/v1
+  description: Production
+- url: https://staging-api.example.com/flights/v1
+  description: Staging
+tags:
+- name: Flights
+  description: Flights resource operations.
+- name: Imports
+  description: Imports resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /flights:
+    get:
+      tags:
+      - Flights
+      summary: List flights
+      operationId: listFlight
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of flights.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlightList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Flights
+      summary: Create flight
+      operationId: createFlight
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFlightRequest'
+      responses:
+        '201':
+          description: Flight created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Flight'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /flights/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Flights
+      summary: Get flight by ID
+      operationId: getFlight
+      responses:
+        '200':
+          description: Flight details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Flight'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Flights
+      summary: Update flight
+      operationId: updateFlight
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFlightRequest'
+      responses:
+        '200':
+          description: Flight updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Flight'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Flights
+      summary: Delete flight
+      operationId: deleteFlight
+      responses:
+        '204':
+          description: Flight deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /imports:
+    get:
+      tags:
+      - Imports
+      summary: List imports
+      operationId: listImport
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of imports.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Imports
+      summary: Create import
+      operationId: createImport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateImportRequest'
+      responses:
+        '201':
+          description: Import created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /imports/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Imports
+      summary: Get import by ID
+      operationId: getImport
+      responses:
+        '200':
+          description: Import details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Imports
+      summary: Update import
+      operationId: updateImport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateImportRequest'
+      responses:
+        '200':
+          description: Import updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Imports
+      summary: Delete import
+      operationId: deleteImport
+      responses:
+        '204':
+          description: Import deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Flight:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        externalId: &id001
+          type: string
+        reference: &id002
+          type: string
+        name: &id003
+          type: string
+        priority: &id004
+          type: integer
+        position: &id005
+          type: integer
+        visible: &id006
+          type: boolean
+        lastSeenAt: &id007
+          type: string
+          format: date-time
+        tagId: &id008
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    FlightList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Flight'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateFlightRequest:
+      type: object
+      properties:
+        externalId: *id001
+        reference: *id002
+        name: *id003
+        priority: *id004
+        position: *id005
+        visible: *id006
+        lastSeenAt: *id007
+        tagId: *id008
+      required:
+      - externalId
+      - reference
+    UpdateFlightRequest:
+      type: object
+      properties:
+        externalId: *id001
+        reference: *id002
+        name: *id003
+        priority: *id004
+        position: *id005
+        visible: *id006
+        lastSeenAt: *id007
+        tagId: *id008
+      required:
+      - externalId
+      - reference
+    Import:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        summary: &id009
+          type: string
+        code: &id010
+          type: string
+        slug: &id011
+          type: string
+        rank: &id012
+          type: integer
+        enabled: &id013
+          type: boolean
+        default: &id014
+          type: boolean
+        dueDate: &id015
+          type: string
+          format: date
+        total: &id016
+          type: number
+          format: float
+        discount: &id017
+          type: number
+          format: float
+        ownerId: &id018
+          type: string
+          format: uuid
+        tagId: &id019
+          type: string
+          format: uuid
+        websiteUrl: &id020
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ImportList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Import'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateImportRequest:
+      type: object
+      properties:
+        summary: *id009
+        code: *id010
+        slug: *id011
+        rank: *id012
+        enabled: *id013
+        default: *id014
+        dueDate: *id015
+        total: *id016
+        discount: *id017
+        ownerId: *id018
+        tagId: *id019
+        websiteUrl: *id020
+      required:
+      - summary
+      - code
+    UpdateImportRequest:
+      type: object
+      properties:
+        summary: *id009
+        code: *id010
+        slug: *id011
+        rank: *id012
+        enabled: *id013
+        default: *id014
+        dueDate: *id015
+        total: *id016
+        discount: *id017
+        ownerId: *id018
+        tagId: *id019
+        websiteUrl: *id020
+      required:
+      - summary
+      - code
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

@@ -1,0 +1,520 @@
+openapi: 3.0.3
+info:
+  title: Achievements API
+  description: Player achievements.
+  version: 1.1.0
+  contact:
+    name: Achievements Team
+    email: achievements@example.com
+servers:
+- url: https://api.example.com/achievements/v1
+  description: Production
+- url: https://staging-api.example.com/achievements/v1
+  description: Staging
+tags:
+- name: Achievements
+  description: Achievements resource operations.
+- name: Imports
+  description: Imports resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /achievements:
+    get:
+      tags:
+      - Achievements
+      summary: List achievements
+      operationId: listAchievement
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of achievements.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AchievementList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Achievements
+      summary: Create achievement
+      operationId: createAchievement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAchievementRequest'
+      responses:
+        '201':
+          description: Achievement created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Achievement'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /achievements/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Achievements
+      summary: Get achievement by ID
+      operationId: getAchievement
+      responses:
+        '200':
+          description: Achievement details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Achievement'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Achievements
+      summary: Update achievement
+      operationId: updateAchievement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAchievementRequest'
+      responses:
+        '200':
+          description: Achievement updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Achievement'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Achievements
+      summary: Delete achievement
+      operationId: deleteAchievement
+      responses:
+        '204':
+          description: Achievement deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /imports:
+    get:
+      tags:
+      - Imports
+      summary: List imports
+      operationId: listImport
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of imports.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Imports
+      summary: Create import
+      operationId: createImport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateImportRequest'
+      responses:
+        '201':
+          description: Import created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /imports/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Imports
+      summary: Get import by ID
+      operationId: getImport
+      responses:
+        '200':
+          description: Import details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Imports
+      summary: Update import
+      operationId: updateImport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateImportRequest'
+      responses:
+        '200':
+          description: Import updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Import'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Imports
+      summary: Delete import
+      operationId: deleteImport
+      responses:
+        '204':
+          description: Import deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Achievement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+        summary: &id001
+          type: string
+        name: &id002
+          type: string
+        archived: &id003
+          type: boolean
+        startDate: &id004
+          type: string
+          format: date
+        completedAt: &id005
+          type: string
+          format: date-time
+        fee: &id006
+          type: number
+          format: float
+        categoryId: &id007
+          type: string
+          format: uuid
+        parentId: &id008
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    AchievementList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Achievement'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateAchievementRequest:
+      type: object
+      properties:
+        summary: *id001
+        name: *id002
+        archived: *id003
+        startDate: *id004
+        completedAt: *id005
+        fee: *id006
+        categoryId: *id007
+        parentId: *id008
+      required:
+      - summary
+      - name
+    UpdateAchievementRequest:
+      type: object
+      properties:
+        summary: *id001
+        name: *id002
+        archived: *id003
+        startDate: *id004
+        completedAt: *id005
+        fee: *id006
+        categoryId: *id007
+        parentId: *id008
+      required:
+      - summary
+      - name
+    Import:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+        title: &id009
+          type: string
+        description: &id010
+          type: string
+        capacity: &id011
+          type: integer
+        count: &id012
+          type: integer
+        archived: &id013
+          type: boolean
+        default: &id014
+          type: boolean
+        lastSeenAt: &id015
+          type: string
+          format: date-time
+        endDate: &id016
+          type: string
+          format: date
+        discount: &id017
+          type: number
+          format: float
+        subtotal: &id018
+          type: number
+          format: float
+        ownerId: &id019
+          type: string
+          format: uuid
+        parentId: &id020
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ImportList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Import'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateImportRequest:
+      type: object
+      properties:
+        title: *id009
+        description: *id010
+        capacity: *id011
+        count: *id012
+        archived: *id013
+        default: *id014
+        lastSeenAt: *id015
+        endDate: *id016
+        discount: *id017
+        subtotal: *id018
+        ownerId: *id019
+        parentId: *id020
+      required:
+      - title
+      - description
+    UpdateImportRequest:
+      type: object
+      properties:
+        title: *id009
+        description: *id010
+        capacity: *id011
+        count: *id012
+        archived: *id013
+        default: *id014
+        lastSeenAt: *id015
+        endDate: *id016
+        discount: *id017
+        subtotal: *id018
+        ownerId: *id019
+        parentId: *id020
+      required:
+      - title
+      - description
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

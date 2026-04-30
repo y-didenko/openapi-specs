@@ -1,0 +1,601 @@
+openapi: 3.0.3
+info:
+  title: CRM Pipelines API
+  description: Sales pipeline configuration.
+  version: 1.2.0
+  contact:
+    name: CRM Pipelines Team
+    email: crmpipelines@example.com
+servers:
+- url: https://api.example.com/crm-pipelines/v1
+  description: Production
+- url: https://staging-api.example.com/crm-pipelines/v1
+  description: Staging
+tags:
+- name: Crm Pipelines
+  description: Crm Pipelines resource operations.
+- name: Labels
+  description: Labels resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /crm-pipelines:
+    get:
+      tags:
+      - Crm Pipelines
+      summary: List crm pipelines
+      operationId: listCrmPipeline
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of crm pipelines.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmPipelineList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Crm Pipelines
+      summary: Create crm pipeline
+      operationId: createCrmPipeline
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCrmPipelineRequest'
+      responses:
+        '201':
+          description: Crm Pipeline created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmPipeline'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /crm-pipelines/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Crm Pipelines
+      summary: Get crm pipeline by ID
+      operationId: getCrmPipeline
+      responses:
+        '200':
+          description: Crm Pipeline details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmPipeline'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Crm Pipelines
+      summary: Update crm pipeline
+      operationId: updateCrmPipeline
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCrmPipelineRequest'
+      responses:
+        '200':
+          description: Crm Pipeline updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrmPipeline'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Crm Pipelines
+      summary: Delete crm pipeline
+      operationId: deleteCrmPipeline
+      responses:
+        '204':
+          description: Crm Pipeline deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /crm-pipelines/stats:
+    get:
+      tags:
+      - Crm Pipelines
+      summary: Aggregate crm pipelines stats
+      operationId: getCrmPipelineStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /labels:
+    get:
+      tags:
+      - Labels
+      summary: List labels
+      operationId: listLabel
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of labels.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabelList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Labels
+      summary: Create label
+      operationId: createLabel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLabelRequest'
+      responses:
+        '201':
+          description: Label created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /labels/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Labels
+      summary: Get label by ID
+      operationId: getLabel
+      responses:
+        '200':
+          description: Label details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Labels
+      summary: Update label
+      operationId: updateLabel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLabelRequest'
+      responses:
+        '200':
+          description: Label updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Labels
+      summary: Delete label
+      operationId: deleteLabel
+      responses:
+        '204':
+          description: Label deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    CrmPipeline:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        externalId: &id001
+          type: string
+        reference: &id002
+          type: string
+        notes: &id003
+          type: string
+        default: &id004
+          type: boolean
+        active: &id005
+          type: boolean
+        lastSeenAt: &id006
+          type: string
+          format: date-time
+        categoryId: &id007
+          type: string
+          format: uuid
+        ownerId: &id008
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    CrmPipelineList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CrmPipeline'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateCrmPipelineRequest:
+      type: object
+      properties:
+        externalId: *id001
+        reference: *id002
+        notes: *id003
+        default: *id004
+        active: *id005
+        lastSeenAt: *id006
+        categoryId: *id007
+        ownerId: *id008
+      required:
+      - externalId
+      - reference
+    UpdateCrmPipelineRequest:
+      type: object
+      properties:
+        externalId: *id001
+        reference: *id002
+        notes: *id003
+        default: *id004
+        active: *id005
+        lastSeenAt: *id006
+        categoryId: *id007
+        ownerId: *id008
+      required:
+      - externalId
+      - reference
+    Label:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - scheduled
+          - running
+          - completed
+          - failed
+        externalId: &id009
+          type: string
+        summary: &id010
+          type: string
+        displayName: &id011
+          type: string
+        priority: &id012
+          type: integer
+        weight: &id013
+          type: number
+          format: float
+        default: &id014
+          type: boolean
+        expiresAt: &id015
+          type: string
+          format: date-time
+        publishedAt: &id016
+          type: string
+          format: date-time
+        fee: &id017
+          type: number
+          format: float
+        tagId: &id018
+          type: string
+          format: uuid
+        websiteUrl: &id019
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LabelList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLabelRequest:
+      type: object
+      properties:
+        externalId: *id009
+        summary: *id010
+        displayName: *id011
+        priority: *id012
+        weight: *id013
+        default: *id014
+        expiresAt: *id015
+        publishedAt: *id016
+        fee: *id017
+        tagId: *id018
+        websiteUrl: *id019
+      required:
+      - externalId
+      - summary
+    UpdateLabelRequest:
+      type: object
+      properties:
+        externalId: *id009
+        summary: *id010
+        displayName: *id011
+        priority: *id012
+        weight: *id013
+        default: *id014
+        expiresAt: *id015
+        publishedAt: *id016
+        fee: *id017
+        tagId: *id018
+        websiteUrl: *id019
+      required:
+      - externalId
+      - summary
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

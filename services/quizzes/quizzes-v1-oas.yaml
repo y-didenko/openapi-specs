@@ -1,0 +1,602 @@
+openapi: 3.0.3
+info:
+  title: Quizzes API
+  description: Quiz authoring and attempts.
+  version: 1.0.0
+  contact:
+    name: Quizzes Team
+    email: quizzes@example.com
+servers:
+- url: https://api.example.com/quizzes/v1
+  description: Production
+- url: https://staging-api.example.com/quizzes/v1
+  description: Staging
+tags:
+- name: Quizzes
+  description: Quizzes resource operations.
+- name: Shares
+  description: Shares resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /quizzes:
+    get:
+      tags:
+      - Quizzes
+      summary: List quizzes
+      operationId: listQuizze
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of quizzes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizzeList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Quizzes
+      summary: Create quizze
+      operationId: createQuizze
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQuizzeRequest'
+      responses:
+        '201':
+          description: Quizze created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quizze'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /quizzes/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Quizzes
+      summary: Get quizze by ID
+      operationId: getQuizze
+      responses:
+        '200':
+          description: Quizze details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quizze'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Quizzes
+      summary: Update quizze
+      operationId: updateQuizze
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQuizzeRequest'
+      responses:
+        '200':
+          description: Quizze updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quizze'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Quizzes
+      summary: Delete quizze
+      operationId: deleteQuizze
+      responses:
+        '204':
+          description: Quizze deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /quizzes/search:
+    post:
+      tags:
+      - Quizzes
+      summary: Advanced search across quizzes
+      operationId: searchQuizze
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizzeList'
+      security:
+      - bearerAuth: []
+  /shares:
+    get:
+      tags:
+      - Shares
+      summary: List shares
+      operationId: listShare
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of shares.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Shares
+      summary: Create share
+      operationId: createShare
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShareRequest'
+      responses:
+        '201':
+          description: Share created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /shares/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Shares
+      summary: Get share by ID
+      operationId: getShare
+      responses:
+        '200':
+          description: Share details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Shares
+      summary: Update share
+      operationId: updateShare
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateShareRequest'
+      responses:
+        '200':
+          description: Share updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Shares
+      summary: Delete share
+      operationId: deleteShare
+      responses:
+        '204':
+          description: Share deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Quizze:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - active
+          - inactive
+          - archived
+        slug: &id001
+          type: string
+        notes: &id002
+          type: string
+        threshold: &id003
+          type: number
+          format: float
+        weight: &id004
+          type: number
+          format: float
+        archived: &id005
+          type: boolean
+        enabled: &id006
+          type: boolean
+        expiresAt: &id007
+          type: string
+          format: date-time
+        dueDate: &id008
+          type: string
+          format: date
+        discount: &id009
+          type: number
+          format: float
+        fee: &id010
+          type: number
+          format: float
+        teamId: &id011
+          type: string
+          format: uuid
+        phone: &id012
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    QuizzeList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Quizze'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateQuizzeRequest:
+      type: object
+      properties:
+        slug: *id001
+        notes: *id002
+        threshold: *id003
+        weight: *id004
+        archived: *id005
+        enabled: *id006
+        expiresAt: *id007
+        dueDate: *id008
+        discount: *id009
+        fee: *id010
+        teamId: *id011
+        phone: *id012
+      required:
+      - slug
+      - notes
+    UpdateQuizzeRequest:
+      type: object
+      properties:
+        slug: *id001
+        notes: *id002
+        threshold: *id003
+        weight: *id004
+        archived: *id005
+        enabled: *id006
+        expiresAt: *id007
+        dueDate: *id008
+        discount: *id009
+        fee: *id010
+        teamId: *id011
+        phone: *id012
+      required:
+      - slug
+      - notes
+    Share:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        summary: &id013
+          type: string
+        slug: &id014
+          type: string
+        count: &id015
+          type: integer
+        position: &id016
+          type: integer
+        visible: &id017
+          type: boolean
+        scheduledAt: &id018
+          type: string
+          format: date-time
+        discount: &id019
+          type: number
+          format: float
+        subtotal: &id020
+          type: number
+          format: float
+        ownerId: &id021
+          type: string
+          format: uuid
+        email: &id022
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ShareList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Share'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateShareRequest:
+      type: object
+      properties:
+        summary: *id013
+        slug: *id014
+        count: *id015
+        position: *id016
+        visible: *id017
+        scheduledAt: *id018
+        discount: *id019
+        subtotal: *id020
+        ownerId: *id021
+        email: *id022
+      required:
+      - summary
+      - slug
+    UpdateShareRequest:
+      type: object
+      properties:
+        summary: *id013
+        slug: *id014
+        count: *id015
+        position: *id016
+        visible: *id017
+        scheduledAt: *id018
+        discount: *id019
+        subtotal: *id020
+        ownerId: *id021
+        email: *id022
+      required:
+      - summary
+      - slug
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

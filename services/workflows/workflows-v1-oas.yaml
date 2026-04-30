@@ -1,0 +1,516 @@
+openapi: 3.0.3
+info:
+  title: Workflows API
+  description: Visual workflow definitions.
+  version: 1.0.0
+  contact:
+    name: Workflows Team
+    email: workflows@example.com
+servers:
+- url: https://api.example.com/workflows/v1
+  description: Production
+- url: https://staging-api.example.com/workflows/v1
+  description: Staging
+tags:
+- name: Workflows
+  description: Workflows resource operations.
+- name: Alerts
+  description: Alerts resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /workflows:
+    get:
+      tags:
+      - Workflows
+      summary: List workflows
+      operationId: listWorkflow
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of workflows.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Workflows
+      summary: Create workflow
+      operationId: createWorkflow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkflowRequest'
+      responses:
+        '201':
+          description: Workflow created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /workflows/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Workflows
+      summary: Get workflow by ID
+      operationId: getWorkflow
+      responses:
+        '200':
+          description: Workflow details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Workflows
+      summary: Update workflow
+      operationId: updateWorkflow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorkflowRequest'
+      responses:
+        '200':
+          description: Workflow updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Workflows
+      summary: Delete workflow
+      operationId: deleteWorkflow
+      responses:
+        '204':
+          description: Workflow deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /alerts:
+    get:
+      tags:
+      - Alerts
+      summary: List alerts
+      operationId: listAlert
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of alerts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Alerts
+      summary: Create alert
+      operationId: createAlert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAlertRequest'
+      responses:
+        '201':
+          description: Alert created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /alerts/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Alerts
+      summary: Get alert by ID
+      operationId: getAlert
+      responses:
+        '200':
+          description: Alert details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Alerts
+      summary: Update alert
+      operationId: updateAlert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAlertRequest'
+      responses:
+        '200':
+          description: Alert updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Alerts
+      summary: Delete alert
+      operationId: deleteAlert
+      responses:
+        '204':
+          description: Alert deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Workflow:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - active
+          - inactive
+          - archived
+        reference: &id001
+          type: string
+        displayName: &id002
+          type: string
+        count: &id003
+          type: integer
+        verified: &id004
+          type: boolean
+        locked: &id005
+          type: boolean
+        expiresAt: &id006
+          type: string
+          format: date-time
+        completedAt: &id007
+          type: string
+          format: date-time
+        tagId: &id008
+          type: string
+          format: uuid
+        websiteUrl: &id009
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    WorkflowList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workflow'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateWorkflowRequest:
+      type: object
+      properties:
+        reference: *id001
+        displayName: *id002
+        count: *id003
+        verified: *id004
+        locked: *id005
+        expiresAt: *id006
+        completedAt: *id007
+        tagId: *id008
+        websiteUrl: *id009
+      required:
+      - reference
+      - displayName
+    UpdateWorkflowRequest:
+      type: object
+      properties:
+        reference: *id001
+        displayName: *id002
+        count: *id003
+        verified: *id004
+        locked: *id005
+        expiresAt: *id006
+        completedAt: *id007
+        tagId: *id008
+        websiteUrl: *id009
+      required:
+      - reference
+      - displayName
+    Alert:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - scheduled
+          - running
+          - completed
+          - failed
+        title: &id010
+          type: string
+        summary: &id011
+          type: string
+        name: &id012
+          type: string
+        verified: &id013
+          type: boolean
+        default: &id014
+          type: boolean
+        expiresAt: &id015
+          type: string
+          format: date-time
+        completedAt: &id016
+          type: string
+          format: date-time
+        updatedBy: &id017
+          type: string
+          format: uuid
+        organizationId: &id018
+          type: string
+          format: uuid
+        email: &id019
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    AlertList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alert'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateAlertRequest:
+      type: object
+      properties:
+        title: *id010
+        summary: *id011
+        name: *id012
+        verified: *id013
+        default: *id014
+        expiresAt: *id015
+        completedAt: *id016
+        updatedBy: *id017
+        organizationId: *id018
+        email: *id019
+      required:
+      - title
+      - summary
+    UpdateAlertRequest:
+      type: object
+      properties:
+        title: *id010
+        summary: *id011
+        name: *id012
+        verified: *id013
+        default: *id014
+        expiresAt: *id015
+        completedAt: *id016
+        updatedBy: *id017
+        organizationId: *id018
+        email: *id019
+      required:
+      - title
+      - summary
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

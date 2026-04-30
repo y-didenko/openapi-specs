@@ -1,0 +1,500 @@
+openapi: 3.0.3
+info:
+  title: Translations API
+  description: i18n string and asset translations.
+  version: 1.3.4
+  contact:
+    name: Translations Team
+    email: translations@example.com
+servers:
+- url: https://api.example.com/translations/v1
+  description: Production
+- url: https://staging-api.example.com/translations/v1
+  description: Staging
+tags:
+- name: Translations
+  description: Translations resource operations.
+- name: Policies
+  description: Policies resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /translations:
+    get:
+      tags:
+      - Translations
+      summary: List translations
+      operationId: listTranslation
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of translations.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranslationList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Translations
+      summary: Create translation
+      operationId: createTranslation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTranslationRequest'
+      responses:
+        '201':
+          description: Translation created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Translation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /translations/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Translations
+      summary: Get translation by ID
+      operationId: getTranslation
+      responses:
+        '200':
+          description: Translation details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Translation'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Translations
+      summary: Update translation
+      operationId: updateTranslation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTranslationRequest'
+      responses:
+        '200':
+          description: Translation updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Translation'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Translations
+      summary: Delete translation
+      operationId: deleteTranslation
+      responses:
+        '204':
+          description: Translation deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /policies:
+    get:
+      tags:
+      - Policies
+      summary: List policies
+      operationId: listPolicy
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of policies.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Policies
+      summary: Create policy
+      operationId: createPolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePolicyRequest'
+      responses:
+        '201':
+          description: Policy created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /policies/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Policies
+      summary: Get policy by ID
+      operationId: getPolicy
+      responses:
+        '200':
+          description: Policy details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Policies
+      summary: Update policy
+      operationId: updatePolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePolicyRequest'
+      responses:
+        '200':
+          description: Policy updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Policies
+      summary: Delete policy
+      operationId: deletePolicy
+      responses:
+        '204':
+          description: Policy deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Translation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        code: &id001
+          type: string
+        summary: &id002
+          type: string
+        threshold: &id003
+          type: number
+          format: float
+        locked: &id004
+          type: boolean
+        completedAt: &id005
+          type: string
+          format: date-time
+        fee: &id006
+          type: number
+          format: float
+        organizationId: &id007
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    TranslationList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Translation'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateTranslationRequest:
+      type: object
+      properties:
+        code: *id001
+        summary: *id002
+        threshold: *id003
+        locked: *id004
+        completedAt: *id005
+        fee: *id006
+        organizationId: *id007
+      required:
+      - code
+      - summary
+    UpdateTranslationRequest:
+      type: object
+      properties:
+        code: *id001
+        summary: *id002
+        threshold: *id003
+        locked: *id004
+        completedAt: *id005
+        fee: *id006
+        organizationId: *id007
+      required:
+      - code
+      - summary
+    Policy:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+        notes: &id008
+          type: string
+        code: &id009
+          type: string
+        default: &id010
+          type: boolean
+        lastSeenAt: &id011
+          type: string
+          format: date-time
+        total: &id012
+          type: number
+          format: float
+        currency: &id013
+          type: string
+        teamId: &id014
+          type: string
+          format: uuid
+        parentId: &id015
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    PolicyList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Policy'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreatePolicyRequest:
+      type: object
+      properties:
+        notes: *id008
+        code: *id009
+        default: *id010
+        lastSeenAt: *id011
+        total: *id012
+        currency: *id013
+        teamId: *id014
+        parentId: *id015
+      required:
+      - notes
+      - code
+    UpdatePolicyRequest:
+      type: object
+      properties:
+        notes: *id008
+        code: *id009
+        default: *id010
+        lastSeenAt: *id011
+        total: *id012
+        currency: *id013
+        teamId: *id014
+        parentId: *id015
+      required:
+      - notes
+      - code
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

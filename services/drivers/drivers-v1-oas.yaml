@@ -1,0 +1,298 @@
+openapi: 3.0.3
+info:
+  title: Drivers API
+  description: Driver roster and certifications.
+  version: 1.2.0
+  contact:
+    name: Drivers Team
+    email: drivers@example.com
+servers:
+- url: https://api.example.com/drivers/v1
+  description: Production
+- url: https://staging-api.example.com/drivers/v1
+  description: Staging
+tags:
+- name: Drivers
+  description: Drivers resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /drivers:
+    get:
+      tags:
+      - Drivers
+      summary: List drivers
+      operationId: listDriver
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of drivers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Drivers
+      summary: Create driver
+      operationId: createDriver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDriverRequest'
+      responses:
+        '201':
+          description: Driver created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Driver'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /drivers/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Drivers
+      summary: Get driver by ID
+      operationId: getDriver
+      responses:
+        '200':
+          description: Driver details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Driver'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Drivers
+      summary: Update driver
+      operationId: updateDriver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDriverRequest'
+      responses:
+        '200':
+          description: Driver updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Driver'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Drivers
+      summary: Delete driver
+      operationId: deleteDriver
+      responses:
+        '204':
+          description: Driver deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Driver:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        summary: &id001
+          type: string
+        title: &id002
+          type: string
+        locked: &id003
+          type: boolean
+        startDate: &id004
+          type: string
+          format: date
+        total: &id005
+          type: number
+          format: float
+        price: &id006
+          type: number
+          format: float
+        createdBy: &id007
+          type: string
+          format: uuid
+        teamId: &id008
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    DriverList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Driver'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateDriverRequest:
+      type: object
+      properties:
+        summary: *id001
+        title: *id002
+        locked: *id003
+        startDate: *id004
+        total: *id005
+        price: *id006
+        createdBy: *id007
+        teamId: *id008
+      required:
+      - summary
+      - title
+    UpdateDriverRequest:
+      type: object
+      properties:
+        summary: *id001
+        title: *id002
+        locked: *id003
+        startDate: *id004
+        total: *id005
+        price: *id006
+        createdBy: *id007
+        teamId: *id008
+      required:
+      - summary
+      - title
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

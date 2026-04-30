@@ -1,0 +1,513 @@
+openapi: 3.0.3
+info:
+  title: Directory API
+  description: Org-wide user and group directory.
+  version: 1.3.4
+  contact:
+    name: Directory Team
+    email: directory@example.com
+servers:
+- url: https://api.example.com/directory/v1
+  description: Production
+- url: https://staging-api.example.com/directory/v1
+  description: Staging
+tags:
+- name: Directory
+  description: Directory resource operations.
+- name: Logs
+  description: Logs resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /directory:
+    get:
+      tags:
+      - Directory
+      summary: List directory
+      operationId: listDirectory
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of directory.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectoryList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Directory
+      summary: Create directory
+      operationId: createDirectory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDirectoryRequest'
+      responses:
+        '201':
+          description: Directory created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Directory'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /directory/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Directory
+      summary: Get directory by ID
+      operationId: getDirectory
+      responses:
+        '200':
+          description: Directory details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Directory'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Directory
+      summary: Update directory
+      operationId: updateDirectory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDirectoryRequest'
+      responses:
+        '200':
+          description: Directory updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Directory'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Directory
+      summary: Delete directory
+      operationId: deleteDirectory
+      responses:
+        '204':
+          description: Directory deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /logs:
+    get:
+      tags:
+      - Logs
+      summary: List logs
+      operationId: listLog
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of logs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Logs
+      summary: Create log
+      operationId: createLog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLogRequest'
+      responses:
+        '201':
+          description: Log created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Log'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /logs/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Logs
+      summary: Get log by ID
+      operationId: getLog
+      responses:
+        '200':
+          description: Log details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Log'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Logs
+      summary: Update log
+      operationId: updateLog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLogRequest'
+      responses:
+        '200':
+          description: Log updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Log'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Logs
+      summary: Delete log
+      operationId: deleteLog
+      responses:
+        '204':
+          description: Log deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Directory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+        summary: &id001
+          type: string
+        externalId: &id002
+          type: string
+        score: &id003
+          type: number
+          format: float
+        weight: &id004
+          type: number
+          format: float
+        archived: &id005
+          type: boolean
+        lastSeenAt: &id006
+          type: string
+          format: date-time
+        discount: &id007
+          type: number
+          format: float
+        updatedBy: &id008
+          type: string
+          format: uuid
+        phone: &id009
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    DirectoryList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Directory'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateDirectoryRequest:
+      type: object
+      properties:
+        summary: *id001
+        externalId: *id002
+        score: *id003
+        weight: *id004
+        archived: *id005
+        lastSeenAt: *id006
+        discount: *id007
+        updatedBy: *id008
+        phone: *id009
+      required:
+      - summary
+      - externalId
+    UpdateDirectoryRequest:
+      type: object
+      properties:
+        summary: *id001
+        externalId: *id002
+        score: *id003
+        weight: *id004
+        archived: *id005
+        lastSeenAt: *id006
+        discount: *id007
+        updatedBy: *id008
+        phone: *id009
+      required:
+      - summary
+      - externalId
+    Log:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - scheduled
+          - running
+          - completed
+          - failed
+        code: &id010
+          type: string
+        name: &id011
+          type: string
+        default: &id012
+          type: boolean
+        archived: &id013
+          type: boolean
+        completedAt: &id014
+          type: string
+          format: date-time
+        publishedAt: &id015
+          type: string
+          format: date-time
+        tagId: &id016
+          type: string
+          format: uuid
+        organizationId: &id017
+          type: string
+          format: uuid
+        websiteUrl: &id018
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LogList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Log'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLogRequest:
+      type: object
+      properties:
+        code: *id010
+        name: *id011
+        default: *id012
+        archived: *id013
+        completedAt: *id014
+        publishedAt: *id015
+        tagId: *id016
+        organizationId: *id017
+        websiteUrl: *id018
+      required:
+      - code
+      - name
+    UpdateLogRequest:
+      type: object
+      properties:
+        code: *id010
+        name: *id011
+        default: *id012
+        archived: *id013
+        completedAt: *id014
+        publishedAt: *id015
+        tagId: *id016
+        organizationId: *id017
+        websiteUrl: *id018
+      required:
+      - code
+      - name
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

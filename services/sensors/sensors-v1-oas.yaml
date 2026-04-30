@@ -1,0 +1,706 @@
+openapi: 3.0.3
+info:
+  title: Sensors API
+  description: Sensor configuration and readings.
+  version: 1.2.0
+  contact:
+    name: Sensors Team
+    email: sensors@example.com
+servers:
+- url: https://api.example.com/sensors/v1
+  description: Production
+- url: https://staging-api.example.com/sensors/v1
+  description: Staging
+tags:
+- name: Sensors
+  description: Sensors resource operations.
+- name: Policies
+  description: Policies resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /sensors:
+    get:
+      tags:
+      - Sensors
+      summary: List sensors
+      operationId: listSensor
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of sensors.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SensorList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Sensors
+      summary: Create sensor
+      operationId: createSensor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSensorRequest'
+      responses:
+        '201':
+          description: Sensor created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sensor'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /sensors/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Sensors
+      summary: Get sensor by ID
+      operationId: getSensor
+      responses:
+        '200':
+          description: Sensor details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sensor'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Sensors
+      summary: Update sensor
+      operationId: updateSensor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSensorRequest'
+      responses:
+        '200':
+          description: Sensor updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sensor'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Sensors
+      summary: Delete sensor
+      operationId: deleteSensor
+      responses:
+        '204':
+          description: Sensor deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /sensors/stats:
+    get:
+      tags:
+      - Sensors
+      summary: Aggregate sensors stats
+      operationId: getSensorStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /sensors/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Sensors
+      summary: Get audit trail
+      operationId: getSensorAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /policies:
+    get:
+      tags:
+      - Policies
+      summary: List policies
+      operationId: listPolicy
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of policies.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Policies
+      summary: Create policy
+      operationId: createPolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePolicyRequest'
+      responses:
+        '201':
+          description: Policy created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /policies/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Policies
+      summary: Get policy by ID
+      operationId: getPolicy
+      responses:
+        '200':
+          description: Policy details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Policies
+      summary: Update policy
+      operationId: updatePolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePolicyRequest'
+      responses:
+        '200':
+          description: Policy updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Policies
+      summary: Delete policy
+      operationId: deletePolicy
+      responses:
+        '204':
+          description: Policy deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /policies/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Policies
+      summary: Get audit trail
+      operationId: getPolicyAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    Sensor:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - active
+          - inactive
+          - archived
+        summary: &id001
+          type: string
+        code: &id002
+          type: string
+        description: &id003
+          type: string
+        count: &id004
+          type: integer
+        rank: &id005
+          type: integer
+        active: &id006
+          type: boolean
+        visible: &id007
+          type: boolean
+        endDate: &id008
+          type: string
+          format: date
+        dueDate: &id009
+          type: string
+          format: date
+        currency: &id010
+          type: string
+        discount: &id011
+          type: number
+          format: float
+        ownerId: &id012
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    SensorList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sensor'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateSensorRequest:
+      type: object
+      properties:
+        summary: *id001
+        code: *id002
+        description: *id003
+        count: *id004
+        rank: *id005
+        active: *id006
+        visible: *id007
+        endDate: *id008
+        dueDate: *id009
+        currency: *id010
+        discount: *id011
+        ownerId: *id012
+      required:
+      - summary
+      - code
+    UpdateSensorRequest:
+      type: object
+      properties:
+        summary: *id001
+        code: *id002
+        description: *id003
+        count: *id004
+        rank: *id005
+        active: *id006
+        visible: *id007
+        endDate: *id008
+        dueDate: *id009
+        currency: *id010
+        discount: *id011
+        ownerId: *id012
+      required:
+      - summary
+      - code
+    Policy:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        summary: &id013
+          type: string
+        name: &id014
+          type: string
+        threshold: &id015
+          type: number
+          format: float
+        rank: &id016
+          type: integer
+        default: &id017
+          type: boolean
+        startDate: &id018
+          type: string
+          format: date
+        publishedAt: &id019
+          type: string
+          format: date-time
+        categoryId: &id020
+          type: string
+          format: uuid
+        parentId: &id021
+          type: string
+          format: uuid
+        websiteUrl: &id022
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    PolicyList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Policy'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreatePolicyRequest:
+      type: object
+      properties:
+        summary: *id013
+        name: *id014
+        threshold: *id015
+        rank: *id016
+        default: *id017
+        startDate: *id018
+        publishedAt: *id019
+        categoryId: *id020
+        parentId: *id021
+        websiteUrl: *id022
+      required:
+      - summary
+      - name
+    UpdatePolicyRequest:
+      type: object
+      properties:
+        summary: *id013
+        name: *id014
+        threshold: *id015
+        rank: *id016
+        default: *id017
+        startDate: *id018
+        publishedAt: *id019
+        categoryId: *id020
+        parentId: *id021
+        websiteUrl: *id022
+      required:
+      - summary
+      - name
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

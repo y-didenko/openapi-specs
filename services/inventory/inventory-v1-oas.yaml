@@ -1,0 +1,647 @@
+openapi: 3.0.3
+info:
+  title: Inventory API
+  description: Stock levels, warehouse positions, and SKU movements.
+  version: 1.2.0
+  contact:
+    name: Inventory Team
+    email: inventory@example.com
+servers:
+- url: https://api.example.com/inventory/v1
+  description: Production
+- url: https://staging-api.example.com/inventory/v1
+  description: Staging
+tags:
+- name: Inventory
+  description: Inventory resource operations.
+- name: Shares
+  description: Shares resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /inventory:
+    get:
+      tags:
+      - Inventory
+      summary: List inventory
+      operationId: listInventory
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of inventory.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Inventory
+      summary: Create inventory
+      operationId: createInventory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInventoryRequest'
+      responses:
+        '201':
+          description: Inventory created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Inventory'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /inventory/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Inventory
+      summary: Get inventory by ID
+      operationId: getInventory
+      responses:
+        '200':
+          description: Inventory details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Inventory'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Inventory
+      summary: Update inventory
+      operationId: updateInventory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateInventoryRequest'
+      responses:
+        '200':
+          description: Inventory updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Inventory'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Inventory
+      summary: Delete inventory
+      operationId: deleteInventory
+      responses:
+        '204':
+          description: Inventory deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /inventory/stats:
+    get:
+      tags:
+      - Inventory
+      summary: Aggregate inventory stats
+      operationId: getInventoryStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /inventory/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Inventory
+      summary: Get audit trail
+      operationId: getInventoryAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /shares:
+    get:
+      tags:
+      - Shares
+      summary: List shares
+      operationId: listShare
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of shares.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Shares
+      summary: Create share
+      operationId: createShare
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShareRequest'
+      responses:
+        '201':
+          description: Share created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /shares/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Shares
+      summary: Get share by ID
+      operationId: getShare
+      responses:
+        '200':
+          description: Share details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Shares
+      summary: Update share
+      operationId: updateShare
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateShareRequest'
+      responses:
+        '200':
+          description: Share updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Shares
+      summary: Delete share
+      operationId: deleteShare
+      responses:
+        '204':
+          description: Share deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    Inventory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+        name: &id001
+          type: string
+        displayName: &id002
+          type: string
+        slug: &id003
+          type: string
+        default: &id004
+          type: boolean
+        startDate: &id005
+          type: string
+          format: date
+        ownerId: &id006
+          type: string
+          format: uuid
+        phone: &id007
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    InventoryList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Inventory'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateInventoryRequest:
+      type: object
+      properties:
+        name: *id001
+        displayName: *id002
+        slug: *id003
+        default: *id004
+        startDate: *id005
+        ownerId: *id006
+        phone: *id007
+      required:
+      - name
+      - displayName
+    UpdateInventoryRequest:
+      type: object
+      properties:
+        name: *id001
+        displayName: *id002
+        slug: *id003
+        default: *id004
+        startDate: *id005
+        ownerId: *id006
+        phone: *id007
+      required:
+      - name
+      - displayName
+    Share:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        code: &id008
+          type: string
+        displayName: &id009
+          type: string
+        slug: &id010
+          type: string
+        default: &id011
+          type: boolean
+        locked: &id012
+          type: boolean
+        endDate: &id013
+          type: string
+          format: date
+        scheduledAt: &id014
+          type: string
+          format: date-time
+        discount: &id015
+          type: number
+          format: float
+        fee: &id016
+          type: number
+          format: float
+        tagId: &id017
+          type: string
+          format: uuid
+        ownerId: &id018
+          type: string
+          format: uuid
+        websiteUrl: &id019
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ShareList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Share'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateShareRequest:
+      type: object
+      properties:
+        code: *id008
+        displayName: *id009
+        slug: *id010
+        default: *id011
+        locked: *id012
+        endDate: *id013
+        scheduledAt: *id014
+        discount: *id015
+        fee: *id016
+        tagId: *id017
+        ownerId: *id018
+        websiteUrl: *id019
+      required:
+      - code
+      - displayName
+    UpdateShareRequest:
+      type: object
+      properties:
+        code: *id008
+        displayName: *id009
+        slug: *id010
+        default: *id011
+        locked: *id012
+        endDate: *id013
+        scheduledAt: *id014
+        discount: *id015
+        fee: *id016
+        tagId: *id017
+        ownerId: *id018
+        websiteUrl: *id019
+      required:
+      - code
+      - displayName
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

@@ -1,0 +1,356 @@
+openapi: 3.0.3
+info:
+  title: Tokens API
+  description: API token issuance and revocation.
+  version: 2.0.0
+  contact:
+    name: Tokens Team
+    email: tokens@example.com
+servers:
+- url: https://api.example.com/tokens/v1
+  description: Production
+- url: https://staging-api.example.com/tokens/v1
+  description: Staging
+tags:
+- name: Tokens
+  description: Tokens resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /tokens:
+    get:
+      tags:
+      - Tokens
+      summary: List tokens
+      operationId: listToken
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of tokens.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Tokens
+      summary: Create token
+      operationId: createToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTokenRequest'
+      responses:
+        '201':
+          description: Token created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /tokens/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Tokens
+      summary: Get token by ID
+      operationId: getToken
+      responses:
+        '200':
+          description: Token details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Tokens
+      summary: Update token
+      operationId: updateToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTokenRequest'
+      responses:
+        '200':
+          description: Token updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Tokens
+      summary: Delete token
+      operationId: deleteToken
+      responses:
+        '204':
+          description: Token deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /tokens/stats:
+    get:
+      tags:
+      - Tokens
+      summary: Aggregate tokens stats
+      operationId: getTokenStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Token:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+        displayName: &id001
+          type: string
+        notes: &id002
+          type: string
+        reference: &id003
+          type: string
+        weight: &id004
+          type: number
+          format: float
+        enabled: &id005
+          type: boolean
+        endDate: &id006
+          type: string
+          format: date
+        discount: &id007
+          type: number
+          format: float
+        updatedBy: &id008
+          type: string
+          format: uuid
+        email: &id009
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    TokenList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Token'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateTokenRequest:
+      type: object
+      properties:
+        displayName: *id001
+        notes: *id002
+        reference: *id003
+        weight: *id004
+        enabled: *id005
+        endDate: *id006
+        discount: *id007
+        updatedBy: *id008
+        email: *id009
+      required:
+      - displayName
+      - notes
+    UpdateTokenRequest:
+      type: object
+      properties:
+        displayName: *id001
+        notes: *id002
+        reference: *id003
+        weight: *id004
+        enabled: *id005
+        endDate: *id006
+        discount: *id007
+        updatedBy: *id008
+        email: *id009
+      required:
+      - displayName
+      - notes
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

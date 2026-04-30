@@ -1,0 +1,1971 @@
+openapi: 3.0.3
+info:
+  title: Auth API
+  description: Authentication, login, and registration flows.
+  version: 1.0.0
+  contact:
+    name: Auth Team
+    email: auth@example.com
+servers:
+- url: https://api.example.com/auth/v1
+  description: Production
+- url: https://staging-api.example.com/auth/v1
+  description: Staging
+tags:
+- name: Auth
+  description: Auth resource operations.
+- name: Labels
+  description: Labels resource operations.
+- name: Notes
+  description: Notes resource operations.
+- name: Shares
+  description: Shares resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /auth:
+    get:
+      tags:
+      - Auth
+      summary: List auth
+      operationId: listAuth
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of auth.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Returns a paginated list of auth. Supports status and free-text filters.
+    post:
+      tags:
+      - Auth
+      summary: Create auth
+      operationId: createAuth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAuthRequest'
+      responses:
+        '201':
+          description: Auth created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Creates a new auth record.
+  /auth/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Auth
+      summary: Get auth by ID
+      operationId: getAuth
+      responses:
+        '200':
+          description: Auth details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Auth
+      summary: Update auth
+      operationId: updateAuth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAuthRequest'
+      responses:
+        '200':
+          description: Auth updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Auth
+      summary: Delete auth
+      operationId: deleteAuth
+      responses:
+        '204':
+          description: Auth deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /auth/bulk:
+    post:
+      tags:
+      - Auth
+      summary: Bulk create auth
+      operationId: bulkCreateAuth
+      description: Create up to 500 records in a single request. Returns per-row results.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  maxItems: 500
+                  items:
+                    $ref: '#/components/schemas/CreateAuthRequest'
+              required:
+              - items
+      responses:
+        '200':
+          description: Bulk operation results.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  succeeded:
+                    type: integer
+                  failed:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        index:
+                          type: integer
+                        id:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        error:
+                          type: string
+                          nullable: true
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Auth
+      summary: Bulk delete auth
+      operationId: bulkDeleteAuth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+              required:
+              - ids
+      responses:
+        '200':
+          description: Deletion summary.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: integer
+                  skipped:
+                    type: integer
+      security:
+      - bearerAuth: []
+  /auth/{id}/comments:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Auth
+      summary: List comments
+      operationId: listAuthComments
+      responses:
+        '200':
+          description: Comments list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommentEntry'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Auth
+      summary: Add comment
+      operationId: addAuthComment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - body
+              properties:
+                body:
+                  type: string
+            example:
+              body: Reviewed and approved.
+      responses:
+        '201':
+          description: Comment created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentEntry'
+      security:
+      - bearerAuth: []
+  /auth/stats:
+    get:
+      tags:
+      - Auth
+      summary: Aggregate auth stats
+      operationId: getAuthStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /auth/search:
+    post:
+      tags:
+      - Auth
+      summary: Advanced search across auth
+      operationId: searchAuth
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthList'
+      security:
+      - bearerAuth: []
+  /labels:
+    get:
+      tags:
+      - Labels
+      summary: List labels
+      operationId: listLabel
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of labels.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabelList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Returns a paginated list of labels. Supports status and free-text filters.
+    post:
+      tags:
+      - Labels
+      summary: Create label
+      operationId: createLabel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLabelRequest'
+      responses:
+        '201':
+          description: Label created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Creates a new label record.
+  /labels/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Labels
+      summary: Get label by ID
+      operationId: getLabel
+      responses:
+        '200':
+          description: Label details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Labels
+      summary: Update label
+      operationId: updateLabel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLabelRequest'
+      responses:
+        '200':
+          description: Label updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Labels
+      summary: Delete label
+      operationId: deleteLabel
+      responses:
+        '204':
+          description: Label deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /labels/{id}/comments:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Labels
+      summary: List comments
+      operationId: listLabelComments
+      responses:
+        '200':
+          description: Comments list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommentEntry'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Labels
+      summary: Add comment
+      operationId: addLabelComment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - body
+              properties:
+                body:
+                  type: string
+            example:
+              body: Reviewed and approved.
+      responses:
+        '201':
+          description: Comment created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentEntry'
+      security:
+      - bearerAuth: []
+  /labels/{id}/audit:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Labels
+      summary: Get audit trail
+      operationId: getLabelAuditTrail
+      description: Returns the chronological audit log for this record.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 500
+      responses:
+        '200':
+          description: Audit entries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        actor:
+                          type: string
+                        action:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        diff:
+                          type: object
+                          additionalProperties: true
+      security:
+      - bearerAuth: []
+  /labels/export:
+    post:
+      tags:
+      - Labels
+      summary: Export labels as CSV
+      operationId: exportLabel
+      description: Submits an asynchronous export job. The response includes a job ID; poll the job for download URL.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                format:
+                  type: string
+                  enum:
+                  - csv
+                  - ndjson
+                  - xlsx
+                filters:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '202':
+          description: Export job accepted.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                  statusUrl:
+                    type: string
+                    format: uri
+      security:
+      - bearerAuth: []
+  /notes:
+    get:
+      tags:
+      - Notes
+      summary: List notes
+      operationId: listNote
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of notes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Returns a paginated list of notes. Supports status and free-text filters.
+    post:
+      tags:
+      - Notes
+      summary: Create note
+      operationId: createNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNoteRequest'
+      responses:
+        '201':
+          description: Note created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Creates a new note record.
+  /notes/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Notes
+      summary: Get note by ID
+      operationId: getNote
+      responses:
+        '200':
+          description: Note details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Notes
+      summary: Update note
+      operationId: updateNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNoteRequest'
+      responses:
+        '200':
+          description: Note updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Notes
+      summary: Delete note
+      operationId: deleteNote
+      responses:
+        '204':
+          description: Note deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /notes/{id}/comments:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Notes
+      summary: List comments
+      operationId: listNoteComments
+      responses:
+        '200':
+          description: Comments list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommentEntry'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Notes
+      summary: Add comment
+      operationId: addNoteComment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - body
+              properties:
+                body:
+                  type: string
+            example:
+              body: Reviewed and approved.
+      responses:
+        '201':
+          description: Comment created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentEntry'
+      security:
+      - bearerAuth: []
+  /notes/search:
+    post:
+      tags:
+      - Notes
+      summary: Advanced search across notes
+      operationId: searchNote
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteList'
+      security:
+      - bearerAuth: []
+  /notes/stats:
+    get:
+      tags:
+      - Notes
+      summary: Aggregate notes stats
+      operationId: getNoteStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /shares:
+    get:
+      tags:
+      - Shares
+      summary: List shares
+      operationId: listShare
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of shares.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Returns a paginated list of shares. Supports status and free-text filters.
+    post:
+      tags:
+      - Shares
+      summary: Create share
+      operationId: createShare
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShareRequest'
+      responses:
+        '201':
+          description: Share created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+      description: Creates a new share record.
+  /shares/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Shares
+      summary: Get share by ID
+      operationId: getShare
+      responses:
+        '200':
+          description: Share details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Shares
+      summary: Update share
+      operationId: updateShare
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateShareRequest'
+      responses:
+        '200':
+          description: Share updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Shares
+      summary: Delete share
+      operationId: deleteShare
+      responses:
+        '204':
+          description: Share deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /shares/{id}/approve:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - Shares
+      summary: Approve share
+      operationId: approveShare
+      description: Transitions the record to the approve state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /shares/{id}/reject:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      tags:
+      - Shares
+      summary: Reject share
+      operationId: rejectShare
+      description: Transitions the record to the reject state. Idempotent on records already in the target state.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for the transition.
+                note:
+                  type: string
+            example:
+              reason: manager_override
+              note: Approved offline
+      responses:
+        '200':
+          description: Record after transition.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Invalid state transition
+      security:
+      - bearerAuth: []
+  /shares/stats:
+    get:
+      tags:
+      - Shares
+      summary: Aggregate shares stats
+      operationId: getShareStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /shares/{id}/comments:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Shares
+      summary: List comments
+      operationId: listShareComments
+      responses:
+        '200':
+          description: Comments list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommentEntry'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Shares
+      summary: Add comment
+      operationId: addShareComment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - body
+              properties:
+                body:
+                  type: string
+            example:
+              body: Reviewed and approved.
+      responses:
+        '201':
+          description: Comment created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentEntry'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    Auth:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-assigned unique identifier.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum:
+          - pending
+          - active
+          - inactive
+          - archived
+          description: 'Lifecycle status. One of: pending, active, inactive, archived.'
+          example: pending
+        slug: &id001
+          type: string
+          description: URL-safe slug
+          example: alpha-record
+        name: &id002
+          type: string
+          description: Display name
+          example: Gamma
+        description: &id003
+          type: string
+          description: Free-form description
+          example: Internal notes describing operational use.
+        count: &id004
+          type: integer
+          description: Item count
+          example: 3
+        threshold: &id005
+          type: number
+          format: float
+          description: Threshold value
+          example: 100
+        default: &id006
+          type: boolean
+          description: Whether this is the default record
+          example: false
+        dueDate: &id007
+          type: string
+          format: date
+          description: Due date
+          example: '2026-05-01'
+        completedAt: &id008
+          type: string
+          format: date-time
+          description: Completion timestamp
+          example: '2026-04-29T18:30:00Z'
+        discount: &id009
+          type: number
+          format: float
+          description: Applied discount
+          example: 25.0
+        fee: &id010
+          type: number
+          format: float
+          description: Fee amount
+          example: 2.5
+        tagId: &id011
+          type: string
+          format: uuid
+          description: Linked tag ID
+          example: tag_priority
+        phone: &id012
+          type: string
+          description: E.164 phone number
+          example: '+14155550100'
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (RFC 3339).
+          example: '2026-04-30T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp (RFC 3339).
+          example: '2026-04-30T12:34:56Z'
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    AuthList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Auth'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateAuthRequest:
+      type: object
+      properties:
+        slug: *id001
+        name: *id002
+        description: *id003
+        count: *id004
+        threshold: *id005
+        default: *id006
+        dueDate: *id007
+        completedAt: *id008
+        discount: *id009
+        fee: *id010
+        tagId: *id011
+        phone: *id012
+      required:
+      - slug
+      - name
+    UpdateAuthRequest:
+      type: object
+      properties:
+        slug: *id001
+        name: *id002
+        description: *id003
+        count: *id004
+        threshold: *id005
+        default: *id006
+        dueDate: *id007
+        completedAt: *id008
+        discount: *id009
+        fee: *id010
+        tagId: *id011
+        phone: *id012
+      required:
+      - slug
+      - name
+    Label:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-assigned unique identifier.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+          description: 'Lifecycle status. One of: draft, published, archived.'
+          example: draft
+        title: &id013
+          type: string
+          description: Title
+          example: New product launch
+        slug: &id014
+          type: string
+          description: URL-safe slug
+          example: weekly-summary
+        reference: &id015
+          type: string
+          description: External reference identifier
+          example: EXT-2024-0100
+        priority: &id016
+          type: integer
+          description: Numeric priority (lower is higher)
+          example: 10
+        position: &id017
+          type: integer
+          description: Sequence position
+          example: 0
+        count: &id018
+          type: integer
+          description: Item count
+          example: 3
+        locked: &id019
+          type: boolean
+          description: Whether the record is locked from edits
+          example: false
+        endDate: &id020
+          type: string
+          format: date
+          description: End date
+          example: '2026-12-31'
+        scheduledAt: &id021
+          type: string
+          format: date-time
+          description: Scheduled timestamp
+          example: '2026-05-01T09:00:00Z'
+        lastSeenAt: &id022
+          type: string
+          format: date-time
+          description: Last seen timestamp
+          example: '2026-04-30T08:15:00Z'
+        teamId: &id023
+          type: string
+          format: uuid
+          description: Owning team ID
+          example: team_550e8400e29b
+        parentId: &id024
+          type: string
+          format: uuid
+          description: Parent record ID
+          example: 550e8400-e29b-41d4-a716-446655440099
+        email: &id025
+          type: string
+          format: email
+          description: Email address
+          example: team@example.com
+        websiteUrl: &id026
+          type: string
+          format: uri
+          description: Public website URL
+          example: https://example.com
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (RFC 3339).
+          example: '2026-04-30T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp (RFC 3339).
+          example: '2026-04-30T12:34:56Z'
+        tags: &id027
+          type: array
+          items:
+            type: string
+          description: Free-form tags.
+          example:
+          - priority
+          - verified
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LabelList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLabelRequest:
+      type: object
+      properties:
+        title: *id013
+        slug: *id014
+        reference: *id015
+        priority: *id016
+        position: *id017
+        count: *id018
+        locked: *id019
+        endDate: *id020
+        scheduledAt: *id021
+        lastSeenAt: *id022
+        teamId: *id023
+        parentId: *id024
+        email: *id025
+        websiteUrl: *id026
+        tags: *id027
+      required:
+      - title
+      - slug
+    UpdateLabelRequest:
+      type: object
+      properties:
+        title: *id013
+        slug: *id014
+        reference: *id015
+        priority: *id016
+        position: *id017
+        count: *id018
+        locked: *id019
+        endDate: *id020
+        scheduledAt: *id021
+        lastSeenAt: *id022
+        teamId: *id023
+        parentId: *id024
+        email: *id025
+        websiteUrl: *id026
+        tags: *id027
+      required:
+      - title
+      - slug
+    Note:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-assigned unique identifier.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+          description: 'Lifecycle status. One of: queued, processing, completed, failed, cancelled.'
+          example: queued
+        notes: &id028
+          type: string
+          description: Internal notes
+          example: Auto-generated.
+        externalId: &id029
+          type: string
+          description: ID in upstream system
+          example: src_8821
+        code: &id030
+          type: string
+          description: Short identifier code
+          example: Q3-NORTH
+        summary: &id031
+          type: string
+          description: One-line summary
+          example: A concise summary used in list views.
+        priority: &id032
+          type: integer
+          description: Numeric priority (lower is higher)
+          example: 10
+        count: &id033
+          type: integer
+          description: Item count
+          example: 100
+        weight: &id034
+          type: number
+          format: float
+          description: Weighting factor
+          example: 0.5
+        default: &id035
+          type: boolean
+          description: Whether this is the default record
+          example: false
+        expiresAt: &id036
+          type: string
+          format: date-time
+          description: Expiry timestamp
+          example: '2026-12-31T23:59:59Z'
+        completedAt: &id037
+          type: string
+          format: date-time
+          description: Completion timestamp
+          example: '2026-04-29T18:30:00Z'
+        startDate: &id038
+          type: string
+          format: date
+          description: Start date
+          example: '2026-01-01'
+        discount: &id039
+          type: number
+          format: float
+          description: Applied discount
+          example: 5.0
+        amount: &id040
+          type: number
+          format: float
+          description: Monetary amount
+          example: 99.99
+        teamId: &id041
+          type: string
+          format: uuid
+          description: Owning team ID
+          example: team_550e8400e29b
+        email: &id042
+          type: string
+          format: email
+          description: Email address
+          example: alex@example.com
+        phone: &id043
+          type: string
+          description: E.164 phone number
+          example: '+14155550100'
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (RFC 3339).
+          example: '2026-04-30T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp (RFC 3339).
+          example: '2026-04-30T12:34:56Z'
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    NoteList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Note'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateNoteRequest:
+      type: object
+      properties:
+        notes: *id028
+        externalId: *id029
+        code: *id030
+        summary: *id031
+        priority: *id032
+        count: *id033
+        weight: *id034
+        default: *id035
+        expiresAt: *id036
+        completedAt: *id037
+        startDate: *id038
+        discount: *id039
+        amount: *id040
+        teamId: *id041
+        email: *id042
+        phone: *id043
+      required:
+      - notes
+      - externalId
+    UpdateNoteRequest:
+      type: object
+      properties:
+        notes: *id028
+        externalId: *id029
+        code: *id030
+        summary: *id031
+        priority: *id032
+        count: *id033
+        weight: *id034
+        default: *id035
+        expiresAt: *id036
+        completedAt: *id037
+        startDate: *id038
+        discount: *id039
+        amount: *id040
+        teamId: *id041
+        email: *id042
+        phone: *id043
+      required:
+      - notes
+      - externalId
+    Share:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-assigned unique identifier.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+          description: 'Lifecycle status. One of: new, in_progress, resolved, closed.'
+          example: new
+        summary: &id044
+          type: string
+          description: One-line summary
+          example: A concise summary used in list views.
+        code: &id045
+          type: string
+          description: Short identifier code
+          example: X-7
+        reference: &id046
+          type: string
+          description: External reference identifier
+          example: EXT-2024-0100
+        slug: &id047
+          type: string
+          description: URL-safe slug
+          example: north-region
+        capacity: &id048
+          type: integer
+          description: Maximum capacity
+          example: 10
+        active: &id049
+          type: boolean
+          description: Whether the record is active
+          example: true
+        default: &id050
+          type: boolean
+          description: Whether this is the default record
+          example: false
+        expiresAt: &id051
+          type: string
+          format: date-time
+          description: Expiry timestamp
+          example: '2026-12-31T23:59:59Z'
+        startDate: &id052
+          type: string
+          format: date
+          description: Start date
+          example: '2026-04-15'
+        completedAt: &id053
+          type: string
+          format: date-time
+          description: Completion timestamp
+          example: '2026-04-29T18:30:00Z'
+        amount: &id054
+          type: number
+          format: float
+          description: Monetary amount
+          example: 99.99
+        teamId: &id055
+          type: string
+          format: uuid
+          description: Owning team ID
+          example: team_550e8400e29b
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp (RFC 3339).
+          example: '2026-04-30T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp (RFC 3339).
+          example: '2026-04-30T12:34:56Z'
+        tags: &id056
+          type: array
+          items:
+            type: string
+          description: Free-form tags.
+          example:
+          - priority
+          - verified
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ShareList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Share'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateShareRequest:
+      type: object
+      properties:
+        summary: *id044
+        code: *id045
+        reference: *id046
+        slug: *id047
+        capacity: *id048
+        active: *id049
+        default: *id050
+        expiresAt: *id051
+        startDate: *id052
+        completedAt: *id053
+        amount: *id054
+        teamId: *id055
+        tags: *id056
+      required:
+      - summary
+      - code
+    UpdateShareRequest:
+      type: object
+      properties:
+        summary: *id044
+        code: *id045
+        reference: *id046
+        slug: *id047
+        capacity: *id048
+        active: *id049
+        default: *id050
+        expiresAt: *id051
+        startDate: *id052
+        completedAt: *id053
+        amount: *id054
+        teamId: *id055
+        tags: *id056
+      required:
+      - summary
+      - code
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

@@ -1,0 +1,916 @@
+openapi: 3.0.3
+info:
+  title: Mentions API
+  description: Mention tracking.
+  version: 1.1.0
+  contact:
+    name: Mentions Team
+    email: mentions@example.com
+servers:
+- url: https://api.example.com/mentions/v1
+  description: Production
+- url: https://staging-api.example.com/mentions/v1
+  description: Staging
+tags:
+- name: Mentions
+  description: Mentions resource operations.
+- name: Labels
+  description: Labels resource operations.
+- name: Rules
+  description: Rules resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /mentions:
+    get:
+      tags:
+      - Mentions
+      summary: List mentions
+      operationId: listMention
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of mentions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MentionList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Mentions
+      summary: Create mention
+      operationId: createMention
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMentionRequest'
+      responses:
+        '201':
+          description: Mention created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mention'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /mentions/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Mentions
+      summary: Get mention by ID
+      operationId: getMention
+      responses:
+        '200':
+          description: Mention details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mention'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Mentions
+      summary: Update mention
+      operationId: updateMention
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMentionRequest'
+      responses:
+        '200':
+          description: Mention updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mention'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Mentions
+      summary: Delete mention
+      operationId: deleteMention
+      responses:
+        '204':
+          description: Mention deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /mentions/bulk:
+    post:
+      tags:
+      - Mentions
+      summary: Bulk create mentions
+      operationId: bulkCreateMention
+      description: Create up to 500 records in a single request. Returns per-row results.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  maxItems: 500
+                  items:
+                    $ref: '#/components/schemas/CreateMentionRequest'
+              required:
+              - items
+      responses:
+        '200':
+          description: Bulk operation results.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  succeeded:
+                    type: integer
+                  failed:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        index:
+                          type: integer
+                        id:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        error:
+                          type: string
+                          nullable: true
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Mentions
+      summary: Bulk delete mentions
+      operationId: bulkDeleteMention
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+              required:
+              - ids
+      responses:
+        '200':
+          description: Deletion summary.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: integer
+                  skipped:
+                    type: integer
+      security:
+      - bearerAuth: []
+  /labels:
+    get:
+      tags:
+      - Labels
+      summary: List labels
+      operationId: listLabel
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of labels.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabelList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Labels
+      summary: Create label
+      operationId: createLabel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLabelRequest'
+      responses:
+        '201':
+          description: Label created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /labels/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Labels
+      summary: Get label by ID
+      operationId: getLabel
+      responses:
+        '200':
+          description: Label details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Labels
+      summary: Update label
+      operationId: updateLabel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLabelRequest'
+      responses:
+        '200':
+          description: Label updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Labels
+      summary: Delete label
+      operationId: deleteLabel
+      responses:
+        '204':
+          description: Label deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /rules:
+    get:
+      tags:
+      - Rules
+      summary: List rules
+      operationId: listRule
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of rules.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Rules
+      summary: Create rule
+      operationId: createRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRuleRequest'
+      responses:
+        '201':
+          description: Rule created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /rules/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Rules
+      summary: Get rule by ID
+      operationId: getRule
+      responses:
+        '200':
+          description: Rule details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Rules
+      summary: Update rule
+      operationId: updateRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRuleRequest'
+      responses:
+        '200':
+          description: Rule updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Rules
+      summary: Delete rule
+      operationId: deleteRule
+      responses:
+        '204':
+          description: Rule deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /rules/stats:
+    get:
+      tags:
+      - Rules
+      summary: Aggregate rules stats
+      operationId: getRuleStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    CommentEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        author:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+    Mention:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        title: &id001
+          type: string
+        displayName: &id002
+          type: string
+        name: &id003
+          type: string
+        version: &id004
+          type: integer
+        count: &id005
+          type: integer
+        active: &id006
+          type: boolean
+        archived: &id007
+          type: boolean
+        endDate: &id008
+          type: string
+          format: date
+        publishedAt: &id009
+          type: string
+          format: date-time
+        price: &id010
+          type: number
+          format: float
+        tagId: &id011
+          type: string
+          format: uuid
+        teamId: &id012
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    MentionList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Mention'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateMentionRequest:
+      type: object
+      properties:
+        title: *id001
+        displayName: *id002
+        name: *id003
+        version: *id004
+        count: *id005
+        active: *id006
+        archived: *id007
+        endDate: *id008
+        publishedAt: *id009
+        price: *id010
+        tagId: *id011
+        teamId: *id012
+      required:
+      - title
+      - displayName
+    UpdateMentionRequest:
+      type: object
+      properties:
+        title: *id001
+        displayName: *id002
+        name: *id003
+        version: *id004
+        count: *id005
+        active: *id006
+        archived: *id007
+        endDate: *id008
+        publishedAt: *id009
+        price: *id010
+        tagId: *id011
+        teamId: *id012
+      required:
+      - title
+      - displayName
+    Label:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        description: &id013
+          type: string
+        externalId: &id014
+          type: string
+        slug: &id015
+          type: string
+        priority: &id016
+          type: integer
+        weight: &id017
+          type: number
+          format: float
+        default: &id018
+          type: boolean
+        visible: &id019
+          type: boolean
+        publishedAt: &id020
+          type: string
+          format: date-time
+        completedAt: &id021
+          type: string
+          format: date-time
+        fee: &id022
+          type: number
+          format: float
+        total: &id023
+          type: number
+          format: float
+        teamId: &id024
+          type: string
+          format: uuid
+        email: &id025
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LabelList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLabelRequest:
+      type: object
+      properties:
+        description: *id013
+        externalId: *id014
+        slug: *id015
+        priority: *id016
+        weight: *id017
+        default: *id018
+        visible: *id019
+        publishedAt: *id020
+        completedAt: *id021
+        fee: *id022
+        total: *id023
+        teamId: *id024
+        email: *id025
+      required:
+      - description
+      - externalId
+    UpdateLabelRequest:
+      type: object
+      properties:
+        description: *id013
+        externalId: *id014
+        slug: *id015
+        priority: *id016
+        weight: *id017
+        default: *id018
+        visible: *id019
+        publishedAt: *id020
+        completedAt: *id021
+        fee: *id022
+        total: *id023
+        teamId: *id024
+        email: *id025
+      required:
+      - description
+      - externalId
+    Rule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        summary: &id026
+          type: string
+        externalId: &id027
+          type: string
+        verified: &id028
+          type: boolean
+        endDate: &id029
+          type: string
+          format: date
+        dueDate: &id030
+          type: string
+          format: date
+        discount: &id031
+          type: number
+          format: float
+        currency: &id032
+          type: string
+        categoryId: &id033
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    RuleList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Rule'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateRuleRequest:
+      type: object
+      properties:
+        summary: *id026
+        externalId: *id027
+        verified: *id028
+        endDate: *id029
+        dueDate: *id030
+        discount: *id031
+        currency: *id032
+        categoryId: *id033
+      required:
+      - summary
+      - externalId
+    UpdateRuleRequest:
+      type: object
+      properties:
+        summary: *id026
+        externalId: *id027
+        verified: *id028
+        endDate: *id029
+        dueDate: *id030
+        discount: *id031
+        currency: *id032
+        categoryId: *id033
+      required:
+      - summary
+      - externalId
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

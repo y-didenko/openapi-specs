@@ -1,0 +1,510 @@
+openapi: 3.0.3
+info:
+  title: Contacts API
+  description: Contact list management and segmentation.
+  version: 1.0.0
+  contact:
+    name: Contacts Team
+    email: contacts@example.com
+servers:
+- url: https://api.example.com/contacts/v1
+  description: Production
+- url: https://staging-api.example.com/contacts/v1
+  description: Staging
+tags:
+- name: Contacts
+  description: Contacts resource operations.
+- name: Policies
+  description: Policies resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /contacts:
+    get:
+      tags:
+      - Contacts
+      summary: List contacts
+      operationId: listContact
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of contacts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Contacts
+      summary: Create contact
+      operationId: createContact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateContactRequest'
+      responses:
+        '201':
+          description: Contact created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /contacts/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Contacts
+      summary: Get contact by ID
+      operationId: getContact
+      responses:
+        '200':
+          description: Contact details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Contacts
+      summary: Update contact
+      operationId: updateContact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateContactRequest'
+      responses:
+        '200':
+          description: Contact updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Contacts
+      summary: Delete contact
+      operationId: deleteContact
+      responses:
+        '204':
+          description: Contact deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /policies:
+    get:
+      tags:
+      - Policies
+      summary: List policies
+      operationId: listPolicy
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of policies.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Policies
+      summary: Create policy
+      operationId: createPolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePolicyRequest'
+      responses:
+        '201':
+          description: Policy created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /policies/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Policies
+      summary: Get policy by ID
+      operationId: getPolicy
+      responses:
+        '200':
+          description: Policy details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Policies
+      summary: Update policy
+      operationId: updatePolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePolicyRequest'
+      responses:
+        '200':
+          description: Policy updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Policies
+      summary: Delete policy
+      operationId: deletePolicy
+      responses:
+        '204':
+          description: Policy deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Contact:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+        notes: &id001
+          type: string
+        description: &id002
+          type: string
+        visible: &id003
+          type: boolean
+        completedAt: &id004
+          type: string
+          format: date-time
+        total: &id005
+          type: number
+          format: float
+        createdBy: &id006
+          type: string
+          format: uuid
+        phone: &id007
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ContactList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contact'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateContactRequest:
+      type: object
+      properties:
+        notes: *id001
+        description: *id002
+        visible: *id003
+        completedAt: *id004
+        total: *id005
+        createdBy: *id006
+        phone: *id007
+      required:
+      - notes
+      - description
+    UpdateContactRequest:
+      type: object
+      properties:
+        notes: *id001
+        description: *id002
+        visible: *id003
+        completedAt: *id004
+        total: *id005
+        createdBy: *id006
+        phone: *id007
+      required:
+      - notes
+      - description
+    Policy:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        description: &id008
+          type: string
+        displayName: &id009
+          type: string
+        slug: &id010
+          type: string
+        rank: &id011
+          type: integer
+        locked: &id012
+          type: boolean
+        active: &id013
+          type: boolean
+        completedAt: &id014
+          type: string
+          format: date-time
+        total: &id015
+          type: number
+          format: float
+        amount: &id016
+          type: number
+          format: float
+        categoryId: &id017
+          type: string
+          format: uuid
+        createdBy: &id018
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    PolicyList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Policy'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreatePolicyRequest:
+      type: object
+      properties:
+        description: *id008
+        displayName: *id009
+        slug: *id010
+        rank: *id011
+        locked: *id012
+        active: *id013
+        completedAt: *id014
+        total: *id015
+        amount: *id016
+        categoryId: *id017
+        createdBy: *id018
+      required:
+      - description
+      - displayName
+    UpdatePolicyRequest:
+      type: object
+      properties:
+        description: *id008
+        displayName: *id009
+        slug: *id010
+        rank: *id011
+        locked: *id012
+        active: *id013
+        completedAt: *id014
+        total: *id015
+        amount: *id016
+        categoryId: *id017
+        createdBy: *id018
+      required:
+      - description
+      - displayName
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

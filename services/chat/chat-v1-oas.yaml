@@ -1,0 +1,296 @@
+openapi: 3.0.3
+info:
+  title: Chat API
+  description: Real-time chat rooms and message history.
+  version: 1.0.0
+  contact:
+    name: Chat Team
+    email: chat@example.com
+servers:
+- url: https://api.example.com/chat/v1
+  description: Production
+- url: https://staging-api.example.com/chat/v1
+  description: Staging
+tags:
+- name: Chat
+  description: Chat resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /chat:
+    get:
+      tags:
+      - Chat
+      summary: List chat
+      operationId: listChat
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of chat.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Chat
+      summary: Create chat
+      operationId: createChat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChatRequest'
+      responses:
+        '201':
+          description: Chat created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chat'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /chat/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Chat
+      summary: Get chat by ID
+      operationId: getChat
+      responses:
+        '200':
+          description: Chat details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chat'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Chat
+      summary: Update chat
+      operationId: updateChat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateChatRequest'
+      responses:
+        '200':
+          description: Chat updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chat'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Chat
+      summary: Delete chat
+      operationId: deleteChat
+      responses:
+        '204':
+          description: Chat deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Chat:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+        description: &id001
+          type: string
+        notes: &id002
+          type: string
+        externalId: &id003
+          type: string
+        enabled: &id004
+          type: boolean
+        expiresAt: &id005
+          type: string
+          format: date-time
+        completedAt: &id006
+          type: string
+          format: date-time
+        organizationId: &id007
+          type: string
+          format: uuid
+        ownerId: &id008
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ChatList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Chat'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateChatRequest:
+      type: object
+      properties:
+        description: *id001
+        notes: *id002
+        externalId: *id003
+        enabled: *id004
+        expiresAt: *id005
+        completedAt: *id006
+        organizationId: *id007
+        ownerId: *id008
+      required:
+      - description
+      - notes
+    UpdateChatRequest:
+      type: object
+      properties:
+        description: *id001
+        notes: *id002
+        externalId: *id003
+        enabled: *id004
+        expiresAt: *id005
+        completedAt: *id006
+        organizationId: *id007
+        ownerId: *id008
+      required:
+      - description
+      - notes
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

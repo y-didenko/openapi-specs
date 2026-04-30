@@ -1,0 +1,319 @@
+openapi: 3.0.3
+info:
+  title: Hotels API
+  description: Hotel inventory and rates.
+  version: 1.2.0
+  contact:
+    name: Hotels Team
+    email: hotels@example.com
+servers:
+- url: https://api.example.com/hotels/v1
+  description: Production
+- url: https://staging-api.example.com/hotels/v1
+  description: Staging
+tags:
+- name: Hotels
+  description: Hotels resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /hotels:
+    get:
+      tags:
+      - Hotels
+      summary: List hotels
+      operationId: listHotel
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of hotels.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HotelList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Hotels
+      summary: Create hotel
+      operationId: createHotel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHotelRequest'
+      responses:
+        '201':
+          description: Hotel created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hotel'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /hotels/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Hotels
+      summary: Get hotel by ID
+      operationId: getHotel
+      responses:
+        '200':
+          description: Hotel details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hotel'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Hotels
+      summary: Update hotel
+      operationId: updateHotel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHotelRequest'
+      responses:
+        '200':
+          description: Hotel updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hotel'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Hotels
+      summary: Delete hotel
+      operationId: deleteHotel
+      responses:
+        '204':
+          description: Hotel deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Hotel:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+        slug: &id001
+          type: string
+        reference: &id002
+          type: string
+        description: &id003
+          type: string
+        position: &id004
+          type: integer
+        score: &id005
+          type: number
+          format: float
+        archived: &id006
+          type: boolean
+        active: &id007
+          type: boolean
+        scheduledAt: &id008
+          type: string
+          format: date-time
+        expiresAt: &id009
+          type: string
+          format: date-time
+        total: &id010
+          type: number
+          format: float
+        fee: &id011
+          type: number
+          format: float
+        categoryId: &id012
+          type: string
+          format: uuid
+        websiteUrl: &id013
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    HotelList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Hotel'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateHotelRequest:
+      type: object
+      properties:
+        slug: *id001
+        reference: *id002
+        description: *id003
+        position: *id004
+        score: *id005
+        archived: *id006
+        active: *id007
+        scheduledAt: *id008
+        expiresAt: *id009
+        total: *id010
+        fee: *id011
+        categoryId: *id012
+        websiteUrl: *id013
+      required:
+      - slug
+      - reference
+    UpdateHotelRequest:
+      type: object
+      properties:
+        slug: *id001
+        reference: *id002
+        description: *id003
+        position: *id004
+        score: *id005
+        archived: *id006
+        active: *id007
+        scheduledAt: *id008
+        expiresAt: *id009
+        total: *id010
+        fee: *id011
+        categoryId: *id012
+        websiteUrl: *id013
+      required:
+      - slug
+      - reference
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

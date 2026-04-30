@@ -1,0 +1,359 @@
+openapi: 3.0.3
+info:
+  title: Journeys API
+  description: Customer journey orchestration.
+  version: 1.2.0
+  contact:
+    name: Journeys Team
+    email: journeys@example.com
+servers:
+- url: https://api.example.com/journeys/v1
+  description: Production
+- url: https://staging-api.example.com/journeys/v1
+  description: Staging
+tags:
+- name: Journeys
+  description: Journeys resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /journeys:
+    get:
+      tags:
+      - Journeys
+      summary: List journeys
+      operationId: listJourney
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of journeys.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JourneyList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Journeys
+      summary: Create journey
+      operationId: createJourney
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateJourneyRequest'
+      responses:
+        '201':
+          description: Journey created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Journey'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /journeys/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Journeys
+      summary: Get journey by ID
+      operationId: getJourney
+      responses:
+        '200':
+          description: Journey details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Journey'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Journeys
+      summary: Update journey
+      operationId: updateJourney
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateJourneyRequest'
+      responses:
+        '200':
+          description: Journey updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Journey'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Journeys
+      summary: Delete journey
+      operationId: deleteJourney
+      responses:
+        '204':
+          description: Journey deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /journeys/stats:
+    get:
+      tags:
+      - Journeys
+      summary: Aggregate journeys stats
+      operationId: getJourneyStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Journey:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+        name: &id001
+          type: string
+        summary: &id002
+          type: string
+        externalId: &id003
+          type: string
+        capacity: &id004
+          type: integer
+        verified: &id005
+          type: boolean
+        visible: &id006
+          type: boolean
+        startDate: &id007
+          type: string
+          format: date
+        endDate: &id008
+          type: string
+          format: date
+        updatedBy: &id009
+          type: string
+          format: uuid
+        websiteUrl: &id010
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    JourneyList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Journey'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateJourneyRequest:
+      type: object
+      properties:
+        name: *id001
+        summary: *id002
+        externalId: *id003
+        capacity: *id004
+        verified: *id005
+        visible: *id006
+        startDate: *id007
+        endDate: *id008
+        updatedBy: *id009
+        websiteUrl: *id010
+      required:
+      - name
+      - summary
+    UpdateJourneyRequest:
+      type: object
+      properties:
+        name: *id001
+        summary: *id002
+        externalId: *id003
+        capacity: *id004
+        verified: *id005
+        visible: *id006
+        startDate: *id007
+        endDate: *id008
+        updatedBy: *id009
+        websiteUrl: *id010
+      required:
+      - name
+      - summary
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

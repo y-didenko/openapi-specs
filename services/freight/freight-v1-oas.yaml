@@ -1,0 +1,303 @@
+openapi: 3.0.3
+info:
+  title: Freight API
+  description: Freight bookings and rates.
+  version: 2.1.0
+  contact:
+    name: Freight Team
+    email: freight@example.com
+servers:
+- url: https://api.example.com/freight/v1
+  description: Production
+- url: https://staging-api.example.com/freight/v1
+  description: Staging
+tags:
+- name: Freight
+  description: Freight resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /freight:
+    get:
+      tags:
+      - Freight
+      summary: List freight
+      operationId: listFreight
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of freight.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FreightList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Freight
+      summary: Create freight
+      operationId: createFreight
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFreightRequest'
+      responses:
+        '201':
+          description: Freight created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Freight'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /freight/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Freight
+      summary: Get freight by ID
+      operationId: getFreight
+      responses:
+        '200':
+          description: Freight details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Freight'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Freight
+      summary: Update freight
+      operationId: updateFreight
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFreightRequest'
+      responses:
+        '200':
+          description: Freight updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Freight'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Freight
+      summary: Delete freight
+      operationId: deleteFreight
+      responses:
+        '204':
+          description: Freight deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Freight:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - scheduled
+          - running
+          - completed
+          - failed
+        title: &id001
+          type: string
+        name: &id002
+          type: string
+        code: &id003
+          type: string
+        weight: &id004
+          type: number
+          format: float
+        active: &id005
+          type: boolean
+        expiresAt: &id006
+          type: string
+          format: date-time
+        amount: &id007
+          type: number
+          format: float
+        price: &id008
+          type: number
+          format: float
+        createdBy: &id009
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    FreightList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Freight'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateFreightRequest:
+      type: object
+      properties:
+        title: *id001
+        name: *id002
+        code: *id003
+        weight: *id004
+        active: *id005
+        expiresAt: *id006
+        amount: *id007
+        price: *id008
+        createdBy: *id009
+      required:
+      - title
+      - name
+    UpdateFreightRequest:
+      type: object
+      properties:
+        title: *id001
+        name: *id002
+        code: *id003
+        weight: *id004
+        active: *id005
+        expiresAt: *id006
+        amount: *id007
+        price: *id008
+        createdBy: *id009
+      required:
+      - title
+      - name
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

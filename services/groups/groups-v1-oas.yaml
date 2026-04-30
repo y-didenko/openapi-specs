@@ -1,0 +1,367 @@
+openapi: 3.0.3
+info:
+  title: Groups API
+  description: User groups and memberships.
+  version: 2.1.0
+  contact:
+    name: Groups Team
+    email: groups@example.com
+servers:
+- url: https://api.example.com/groups/v1
+  description: Production
+- url: https://staging-api.example.com/groups/v1
+  description: Staging
+tags:
+- name: Groups
+  description: Groups resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /groups:
+    get:
+      tags:
+      - Groups
+      summary: List groups
+      operationId: listGroup
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of groups.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Groups
+      summary: Create group
+      operationId: createGroup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGroupRequest'
+      responses:
+        '201':
+          description: Group created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /groups/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Groups
+      summary: Get group by ID
+      operationId: getGroup
+      responses:
+        '200':
+          description: Group details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Groups
+      summary: Update group
+      operationId: updateGroup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGroupRequest'
+      responses:
+        '200':
+          description: Group updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Groups
+      summary: Delete group
+      operationId: deleteGroup
+      responses:
+        '204':
+          description: Group deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /groups/stats:
+    get:
+      tags:
+      - Groups
+      summary: Aggregate groups stats
+      operationId: getGroupStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Group:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        slug: &id001
+          type: string
+        externalId: &id002
+          type: string
+        capacity: &id003
+          type: integer
+        rank: &id004
+          type: integer
+        active: &id005
+          type: boolean
+        locked: &id006
+          type: boolean
+        lastSeenAt: &id007
+          type: string
+          format: date-time
+        scheduledAt: &id008
+          type: string
+          format: date-time
+        total: &id009
+          type: number
+          format: float
+        organizationId: &id010
+          type: string
+          format: uuid
+        websiteUrl: &id011
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    GroupList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Group'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateGroupRequest:
+      type: object
+      properties:
+        slug: *id001
+        externalId: *id002
+        capacity: *id003
+        rank: *id004
+        active: *id005
+        locked: *id006
+        lastSeenAt: *id007
+        scheduledAt: *id008
+        total: *id009
+        organizationId: *id010
+        websiteUrl: *id011
+      required:
+      - slug
+      - externalId
+    UpdateGroupRequest:
+      type: object
+      properties:
+        slug: *id001
+        externalId: *id002
+        capacity: *id003
+        rank: *id004
+        active: *id005
+        locked: *id006
+        lastSeenAt: *id007
+        scheduledAt: *id008
+        total: *id009
+        organizationId: *id010
+        websiteUrl: *id011
+      required:
+      - slug
+      - externalId
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

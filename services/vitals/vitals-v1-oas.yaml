@@ -1,0 +1,510 @@
+openapi: 3.0.3
+info:
+  title: Vitals API
+  description: Patient vitals capture.
+  version: 2.1.0
+  contact:
+    name: Vitals Team
+    email: vitals@example.com
+servers:
+- url: https://api.example.com/vitals/v1
+  description: Production
+- url: https://staging-api.example.com/vitals/v1
+  description: Staging
+tags:
+- name: Vitals
+  description: Vitals resource operations.
+- name: Events
+  description: Events resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /vitals:
+    get:
+      tags:
+      - Vitals
+      summary: List vitals
+      operationId: listVital
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of vitals.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VitalList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Vitals
+      summary: Create vital
+      operationId: createVital
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVitalRequest'
+      responses:
+        '201':
+          description: Vital created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vital'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /vitals/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Vitals
+      summary: Get vital by ID
+      operationId: getVital
+      responses:
+        '200':
+          description: Vital details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vital'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Vitals
+      summary: Update vital
+      operationId: updateVital
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateVitalRequest'
+      responses:
+        '200':
+          description: Vital updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vital'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Vitals
+      summary: Delete vital
+      operationId: deleteVital
+      responses:
+        '204':
+          description: Vital deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /events:
+    get:
+      tags:
+      - Events
+      summary: List events
+      operationId: listEvent
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of events.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Events
+      summary: Create event
+      operationId: createEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventRequest'
+      responses:
+        '201':
+          description: Event created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /events/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Events
+      summary: Get event by ID
+      operationId: getEvent
+      responses:
+        '200':
+          description: Event details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Events
+      summary: Update event
+      operationId: updateEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEventRequest'
+      responses:
+        '200':
+          description: Event updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Events
+      summary: Delete event
+      operationId: deleteEvent
+      responses:
+        '204':
+          description: Event deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Vital:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        code: &id001
+          type: string
+        reference: &id002
+          type: string
+        capacity: &id003
+          type: integer
+        verified: &id004
+          type: boolean
+        locked: &id005
+          type: boolean
+        endDate: &id006
+          type: string
+          format: date
+        currency: &id007
+          type: string
+        subtotal: &id008
+          type: number
+          format: float
+        updatedBy: &id009
+          type: string
+          format: uuid
+        email: &id010
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    VitalList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Vital'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateVitalRequest:
+      type: object
+      properties:
+        code: *id001
+        reference: *id002
+        capacity: *id003
+        verified: *id004
+        locked: *id005
+        endDate: *id006
+        currency: *id007
+        subtotal: *id008
+        updatedBy: *id009
+        email: *id010
+      required:
+      - code
+      - reference
+    UpdateVitalRequest:
+      type: object
+      properties:
+        code: *id001
+        reference: *id002
+        capacity: *id003
+        verified: *id004
+        locked: *id005
+        endDate: *id006
+        currency: *id007
+        subtotal: *id008
+        updatedBy: *id009
+        email: *id010
+      required:
+      - code
+      - reference
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        code: &id011
+          type: string
+        notes: &id012
+          type: string
+        displayName: &id013
+          type: string
+        default: &id014
+          type: boolean
+        active: &id015
+          type: boolean
+        completedAt: &id016
+          type: string
+          format: date-time
+        parentId: &id017
+          type: string
+          format: uuid
+        createdBy: &id018
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    EventList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateEventRequest:
+      type: object
+      properties:
+        code: *id011
+        notes: *id012
+        displayName: *id013
+        default: *id014
+        active: *id015
+        completedAt: *id016
+        parentId: *id017
+        createdBy: *id018
+      required:
+      - code
+      - notes
+    UpdateEventRequest:
+      type: object
+      properties:
+        code: *id011
+        notes: *id012
+        displayName: *id013
+        default: *id014
+        active: *id015
+        completedAt: *id016
+        parentId: *id017
+        createdBy: *id018
+      required:
+      - code
+      - notes
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

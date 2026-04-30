@@ -1,0 +1,378 @@
+openapi: 3.0.3
+info:
+  title: Leases API
+  description: Lease contracts and renewals.
+  version: 2.1.0
+  contact:
+    name: Leases Team
+    email: leases@example.com
+servers:
+- url: https://api.example.com/leases/v1
+  description: Production
+- url: https://staging-api.example.com/leases/v1
+  description: Staging
+tags:
+- name: Leases
+  description: Leases resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /leases:
+    get:
+      tags:
+      - Leases
+      summary: List leases
+      operationId: listLeas
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of leases.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeasList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Leases
+      summary: Create leas
+      operationId: createLea
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLeasRequest'
+      responses:
+        '201':
+          description: Leas created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Leas'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /leases/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Leases
+      summary: Get leas by ID
+      operationId: getLea
+      responses:
+        '200':
+          description: Leas details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Leas'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Leases
+      summary: Update leas
+      operationId: updateLea
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLeasRequest'
+      responses:
+        '200':
+          description: Leas updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Leas'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Leases
+      summary: Delete leas
+      operationId: deleteLea
+      responses:
+        '204':
+          description: Leas deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /leases/search:
+    post:
+      tags:
+      - Leases
+      summary: Advanced search across leases
+      operationId: searchLeas
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeasList'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Leas:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        name: &id001
+          type: string
+        summary: &id002
+          type: string
+        description: &id003
+          type: string
+        active: &id004
+          type: boolean
+        expiresAt: &id005
+          type: string
+          format: date-time
+        subtotal: &id006
+          type: number
+          format: float
+        currency: &id007
+          type: string
+        categoryId: &id008
+          type: string
+          format: uuid
+        updatedBy: &id009
+          type: string
+          format: uuid
+        websiteUrl: &id010
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LeasList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Leas'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLeasRequest:
+      type: object
+      properties:
+        name: *id001
+        summary: *id002
+        description: *id003
+        active: *id004
+        expiresAt: *id005
+        subtotal: *id006
+        currency: *id007
+        categoryId: *id008
+        updatedBy: *id009
+        websiteUrl: *id010
+      required:
+      - name
+      - summary
+    UpdateLeasRequest:
+      type: object
+      properties:
+        name: *id001
+        summary: *id002
+        description: *id003
+        active: *id004
+        expiresAt: *id005
+        subtotal: *id006
+        currency: *id007
+        categoryId: *id008
+        updatedBy: *id009
+        websiteUrl: *id010
+      required:
+      - name
+      - summary
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

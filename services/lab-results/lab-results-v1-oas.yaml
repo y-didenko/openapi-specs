@@ -1,0 +1,351 @@
+openapi: 3.0.3
+info:
+  title: Lab Results API
+  description: Lab orders and result reporting.
+  version: 2.0.0
+  contact:
+    name: Lab Results Team
+    email: labresults@example.com
+servers:
+- url: https://api.example.com/lab-results/v1
+  description: Production
+- url: https://staging-api.example.com/lab-results/v1
+  description: Staging
+tags:
+- name: Lab Results
+  description: Lab Results resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /lab-results:
+    get:
+      tags:
+      - Lab Results
+      summary: List lab results
+      operationId: listLabResult
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of lab results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabResultList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Lab Results
+      summary: Create lab result
+      operationId: createLabResult
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLabResultRequest'
+      responses:
+        '201':
+          description: Lab Result created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /lab-results/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Lab Results
+      summary: Get lab result by ID
+      operationId: getLabResult
+      responses:
+        '200':
+          description: Lab Result details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabResult'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Lab Results
+      summary: Update lab result
+      operationId: updateLabResult
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLabResultRequest'
+      responses:
+        '200':
+          description: Lab Result updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabResult'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Lab Results
+      summary: Delete lab result
+      operationId: deleteLabResult
+      responses:
+        '204':
+          description: Lab Result deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /lab-results/stats:
+    get:
+      tags:
+      - Lab Results
+      summary: Aggregate lab results stats
+      operationId: getLabResultStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    LabResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        code: &id001
+          type: string
+        slug: &id002
+          type: string
+        notes: &id003
+          type: string
+        version: &id004
+          type: integer
+        locked: &id005
+          type: boolean
+        startDate: &id006
+          type: string
+          format: date
+        updatedBy: &id007
+          type: string
+          format: uuid
+        parentId: &id008
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LabResultList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabResult'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLabResultRequest:
+      type: object
+      properties:
+        code: *id001
+        slug: *id002
+        notes: *id003
+        version: *id004
+        locked: *id005
+        startDate: *id006
+        updatedBy: *id007
+        parentId: *id008
+      required:
+      - code
+      - slug
+    UpdateLabResultRequest:
+      type: object
+      properties:
+        code: *id001
+        slug: *id002
+        notes: *id003
+        version: *id004
+        locked: *id005
+        startDate: *id006
+        updatedBy: *id007
+        parentId: *id008
+      required:
+      - code
+      - slug
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

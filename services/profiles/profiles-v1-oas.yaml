@@ -1,0 +1,521 @@
+openapi: 3.0.3
+info:
+  title: Profiles API
+  description: User profile data and preferences.
+  version: 2.1.0
+  contact:
+    name: Profiles Team
+    email: profiles@example.com
+servers:
+- url: https://api.example.com/profiles/v1
+  description: Production
+- url: https://staging-api.example.com/profiles/v1
+  description: Staging
+tags:
+- name: Profiles
+  description: Profiles resource operations.
+- name: Alerts
+  description: Alerts resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /profiles:
+    get:
+      tags:
+      - Profiles
+      summary: List profiles
+      operationId: listProfile
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of profiles.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Profiles
+      summary: Create profile
+      operationId: createProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProfileRequest'
+      responses:
+        '201':
+          description: Profile created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /profiles/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Profiles
+      summary: Get profile by ID
+      operationId: getProfile
+      responses:
+        '200':
+          description: Profile details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Profiles
+      summary: Update profile
+      operationId: updateProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Profile updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Profiles
+      summary: Delete profile
+      operationId: deleteProfile
+      responses:
+        '204':
+          description: Profile deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /alerts:
+    get:
+      tags:
+      - Alerts
+      summary: List alerts
+      operationId: listAlert
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of alerts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Alerts
+      summary: Create alert
+      operationId: createAlert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAlertRequest'
+      responses:
+        '201':
+          description: Alert created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /alerts/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Alerts
+      summary: Get alert by ID
+      operationId: getAlert
+      responses:
+        '200':
+          description: Alert details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Alerts
+      summary: Update alert
+      operationId: updateAlert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAlertRequest'
+      responses:
+        '200':
+          description: Alert updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Alerts
+      summary: Delete alert
+      operationId: deleteAlert
+      responses:
+        '204':
+          description: Alert deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Profile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        description: &id001
+          type: string
+        summary: &id002
+          type: string
+        name: &id003
+          type: string
+        score: &id004
+          type: number
+          format: float
+        default: &id005
+          type: boolean
+        expiresAt: &id006
+          type: string
+          format: date-time
+        subtotal: &id007
+          type: number
+          format: float
+        currency: &id008
+          type: string
+        updatedBy: &id009
+          type: string
+          format: uuid
+        parentId: &id010
+          type: string
+          format: uuid
+        websiteUrl: &id011
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ProfileList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Profile'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateProfileRequest:
+      type: object
+      properties:
+        description: *id001
+        summary: *id002
+        name: *id003
+        score: *id004
+        default: *id005
+        expiresAt: *id006
+        subtotal: *id007
+        currency: *id008
+        updatedBy: *id009
+        parentId: *id010
+        websiteUrl: *id011
+      required:
+      - description
+      - summary
+    UpdateProfileRequest:
+      type: object
+      properties:
+        description: *id001
+        summary: *id002
+        name: *id003
+        score: *id004
+        default: *id005
+        expiresAt: *id006
+        subtotal: *id007
+        currency: *id008
+        updatedBy: *id009
+        parentId: *id010
+        websiteUrl: *id011
+      required:
+      - description
+      - summary
+    Alert:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        externalId: &id012
+          type: string
+        displayName: &id013
+          type: string
+        visible: &id014
+          type: boolean
+        endDate: &id015
+          type: string
+          format: date
+        completedAt: &id016
+          type: string
+          format: date-time
+        discount: &id017
+          type: number
+          format: float
+        subtotal: &id018
+          type: number
+          format: float
+        parentId: &id019
+          type: string
+          format: uuid
+        teamId: &id020
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    AlertList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alert'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateAlertRequest:
+      type: object
+      properties:
+        externalId: *id012
+        displayName: *id013
+        visible: *id014
+        endDate: *id015
+        completedAt: *id016
+        discount: *id017
+        subtotal: *id018
+        parentId: *id019
+        teamId: *id020
+      required:
+      - externalId
+      - displayName
+    UpdateAlertRequest:
+      type: object
+      properties:
+        externalId: *id012
+        displayName: *id013
+        visible: *id014
+        endDate: *id015
+        completedAt: *id016
+        discount: *id017
+        subtotal: *id018
+        parentId: *id019
+        teamId: *id020
+      required:
+      - externalId
+      - displayName
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

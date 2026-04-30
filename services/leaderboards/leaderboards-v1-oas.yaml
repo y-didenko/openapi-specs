@@ -1,0 +1,310 @@
+openapi: 3.0.3
+info:
+  title: Leaderboards API
+  description: Per-game leaderboards.
+  version: 1.2.0
+  contact:
+    name: Leaderboards Team
+    email: leaderboards@example.com
+servers:
+- url: https://api.example.com/leaderboards/v1
+  description: Production
+- url: https://staging-api.example.com/leaderboards/v1
+  description: Staging
+tags:
+- name: Leaderboards
+  description: Leaderboards resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /leaderboards:
+    get:
+      tags:
+      - Leaderboards
+      summary: List leaderboards
+      operationId: listLeaderboard
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of leaderboards.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderboardList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Leaderboards
+      summary: Create leaderboard
+      operationId: createLeaderboard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLeaderboardRequest'
+      responses:
+        '201':
+          description: Leaderboard created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Leaderboard'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /leaderboards/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Leaderboards
+      summary: Get leaderboard by ID
+      operationId: getLeaderboard
+      responses:
+        '200':
+          description: Leaderboard details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Leaderboard'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Leaderboards
+      summary: Update leaderboard
+      operationId: updateLeaderboard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLeaderboardRequest'
+      responses:
+        '200':
+          description: Leaderboard updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Leaderboard'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Leaderboards
+      summary: Delete leaderboard
+      operationId: deleteLeaderboard
+      responses:
+        '204':
+          description: Leaderboard deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Leaderboard:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - scheduled
+          - running
+          - completed
+          - failed
+        summary: &id001
+          type: string
+        description: &id002
+          type: string
+        externalId: &id003
+          type: string
+        position: &id004
+          type: integer
+        score: &id005
+          type: number
+          format: float
+        locked: &id006
+          type: boolean
+        active: &id007
+          type: boolean
+        scheduledAt: &id008
+          type: string
+          format: date-time
+        currency: &id009
+          type: string
+        updatedBy: &id010
+          type: string
+          format: uuid
+        tagId: &id011
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LeaderboardList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Leaderboard'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLeaderboardRequest:
+      type: object
+      properties:
+        summary: *id001
+        description: *id002
+        externalId: *id003
+        position: *id004
+        score: *id005
+        locked: *id006
+        active: *id007
+        scheduledAt: *id008
+        currency: *id009
+        updatedBy: *id010
+        tagId: *id011
+      required:
+      - summary
+      - description
+    UpdateLeaderboardRequest:
+      type: object
+      properties:
+        summary: *id001
+        description: *id002
+        externalId: *id003
+        position: *id004
+        score: *id005
+        locked: *id006
+        active: *id007
+        scheduledAt: *id008
+        currency: *id009
+        updatedBy: *id010
+        tagId: *id011
+      required:
+      - summary
+      - description
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

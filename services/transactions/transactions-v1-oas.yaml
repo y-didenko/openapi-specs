@@ -1,0 +1,306 @@
+openapi: 3.0.3
+info:
+  title: Transactions API
+  description: Financial transaction ledger entries.
+  version: 1.1.0
+  contact:
+    name: Transactions Team
+    email: transactions@example.com
+servers:
+- url: https://api.example.com/transactions/v1
+  description: Production
+- url: https://staging-api.example.com/transactions/v1
+  description: Staging
+tags:
+- name: Transactions
+  description: Transactions resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /transactions:
+    get:
+      tags:
+      - Transactions
+      summary: List transactions
+      operationId: listTransaction
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of transactions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Transactions
+      summary: Create transaction
+      operationId: createTransaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransactionRequest'
+      responses:
+        '201':
+          description: Transaction created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /transactions/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Transactions
+      summary: Get transaction by ID
+      operationId: getTransaction
+      responses:
+        '200':
+          description: Transaction details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Transactions
+      summary: Update transaction
+      operationId: updateTransaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTransactionRequest'
+      responses:
+        '200':
+          description: Transaction updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Transactions
+      summary: Delete transaction
+      operationId: deleteTransaction
+      responses:
+        '204':
+          description: Transaction deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        reference: &id001
+          type: string
+        displayName: &id002
+          type: string
+        externalId: &id003
+          type: string
+        count: &id004
+          type: integer
+        enabled: &id005
+          type: boolean
+        scheduledAt: &id006
+          type: string
+          format: date-time
+        dueDate: &id007
+          type: string
+          format: date
+        subtotal: &id008
+          type: number
+          format: float
+        updatedBy: &id009
+          type: string
+          format: uuid
+        email: &id010
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    TransactionList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateTransactionRequest:
+      type: object
+      properties:
+        reference: *id001
+        displayName: *id002
+        externalId: *id003
+        count: *id004
+        enabled: *id005
+        scheduledAt: *id006
+        dueDate: *id007
+        subtotal: *id008
+        updatedBy: *id009
+        email: *id010
+      required:
+      - reference
+      - displayName
+    UpdateTransactionRequest:
+      type: object
+      properties:
+        reference: *id001
+        displayName: *id002
+        externalId: *id003
+        count: *id004
+        enabled: *id005
+        scheduledAt: *id006
+        dueDate: *id007
+        subtotal: *id008
+        updatedBy: *id009
+        email: *id010
+      required:
+      - reference
+      - displayName
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

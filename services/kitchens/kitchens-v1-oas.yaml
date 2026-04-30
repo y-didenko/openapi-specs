@@ -1,0 +1,596 @@
+openapi: 3.0.3
+info:
+  title: Kitchens API
+  description: Kitchen station orchestration.
+  version: 1.1.0
+  contact:
+    name: Kitchens Team
+    email: kitchens@example.com
+servers:
+- url: https://api.example.com/kitchens/v1
+  description: Production
+- url: https://staging-api.example.com/kitchens/v1
+  description: Staging
+tags:
+- name: Kitchens
+  description: Kitchens resource operations.
+- name: Notes
+  description: Notes resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /kitchens:
+    get:
+      tags:
+      - Kitchens
+      summary: List kitchens
+      operationId: listKitchen
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of kitchens.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KitchenList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Kitchens
+      summary: Create kitchen
+      operationId: createKitchen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateKitchenRequest'
+      responses:
+        '201':
+          description: Kitchen created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Kitchen'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /kitchens/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Kitchens
+      summary: Get kitchen by ID
+      operationId: getKitchen
+      responses:
+        '200':
+          description: Kitchen details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Kitchen'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Kitchens
+      summary: Update kitchen
+      operationId: updateKitchen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateKitchenRequest'
+      responses:
+        '200':
+          description: Kitchen updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Kitchen'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Kitchens
+      summary: Delete kitchen
+      operationId: deleteKitchen
+      responses:
+        '204':
+          description: Kitchen deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /kitchens/search:
+    post:
+      tags:
+      - Kitchens
+      summary: Advanced search across kitchens
+      operationId: searchKitchen
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KitchenList'
+      security:
+      - bearerAuth: []
+  /notes:
+    get:
+      tags:
+      - Notes
+      summary: List notes
+      operationId: listNote
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of notes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Notes
+      summary: Create note
+      operationId: createNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNoteRequest'
+      responses:
+        '201':
+          description: Note created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /notes/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Notes
+      summary: Get note by ID
+      operationId: getNote
+      responses:
+        '200':
+          description: Note details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Notes
+      summary: Update note
+      operationId: updateNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNoteRequest'
+      responses:
+        '200':
+          description: Note updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Notes
+      summary: Delete note
+      operationId: deleteNote
+      responses:
+        '204':
+          description: Note deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Kitchen:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - scheduled
+          - running
+          - completed
+          - failed
+        displayName: &id001
+          type: string
+        externalId: &id002
+          type: string
+        rank: &id003
+          type: integer
+        count: &id004
+          type: integer
+        verified: &id005
+          type: boolean
+        visible: &id006
+          type: boolean
+        startDate: &id007
+          type: string
+          format: date
+        scheduledAt: &id008
+          type: string
+          format: date-time
+        fee: &id009
+          type: number
+          format: float
+        updatedBy: &id010
+          type: string
+          format: uuid
+        email: &id011
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    KitchenList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Kitchen'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateKitchenRequest:
+      type: object
+      properties:
+        displayName: *id001
+        externalId: *id002
+        rank: *id003
+        count: *id004
+        verified: *id005
+        visible: *id006
+        startDate: *id007
+        scheduledAt: *id008
+        fee: *id009
+        updatedBy: *id010
+        email: *id011
+      required:
+      - displayName
+      - externalId
+    UpdateKitchenRequest:
+      type: object
+      properties:
+        displayName: *id001
+        externalId: *id002
+        rank: *id003
+        count: *id004
+        verified: *id005
+        visible: *id006
+        startDate: *id007
+        scheduledAt: *id008
+        fee: *id009
+        updatedBy: *id010
+        email: *id011
+      required:
+      - displayName
+      - externalId
+    Note:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+        notes: &id012
+          type: string
+        summary: &id013
+          type: string
+        code: &id014
+          type: string
+        weight: &id015
+          type: number
+          format: float
+        version: &id016
+          type: integer
+        verified: &id017
+          type: boolean
+        completedAt: &id018
+          type: string
+          format: date-time
+        lastSeenAt: &id019
+          type: string
+          format: date-time
+        createdBy: &id020
+          type: string
+          format: uuid
+        phone: &id021
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    NoteList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Note'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateNoteRequest:
+      type: object
+      properties:
+        notes: *id012
+        summary: *id013
+        code: *id014
+        weight: *id015
+        version: *id016
+        verified: *id017
+        completedAt: *id018
+        lastSeenAt: *id019
+        createdBy: *id020
+        phone: *id021
+      required:
+      - notes
+      - summary
+    UpdateNoteRequest:
+      type: object
+      properties:
+        notes: *id012
+        summary: *id013
+        code: *id014
+        weight: *id015
+        version: *id016
+        verified: *id017
+        completedAt: *id018
+        lastSeenAt: *id019
+        createdBy: *id020
+        phone: *id021
+      required:
+      - notes
+      - summary
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

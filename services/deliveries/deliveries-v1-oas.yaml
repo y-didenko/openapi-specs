@@ -1,0 +1,306 @@
+openapi: 3.0.3
+info:
+  title: Deliveries API
+  description: Last-mile delivery operations.
+  version: 1.1.0
+  contact:
+    name: Deliveries Team
+    email: deliveries@example.com
+servers:
+- url: https://api.example.com/deliveries/v1
+  description: Production
+- url: https://staging-api.example.com/deliveries/v1
+  description: Staging
+tags:
+- name: Deliveries
+  description: Deliveries resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /deliveries:
+    get:
+      tags:
+      - Deliveries
+      summary: List deliveries
+      operationId: listDelivery
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of deliveries.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeliveryList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Deliveries
+      summary: Create delivery
+      operationId: createDelivery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDeliveryRequest'
+      responses:
+        '201':
+          description: Delivery created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Delivery'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /deliveries/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Deliveries
+      summary: Get delivery by ID
+      operationId: getDelivery
+      responses:
+        '200':
+          description: Delivery details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Delivery'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Deliveries
+      summary: Update delivery
+      operationId: updateDelivery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDeliveryRequest'
+      responses:
+        '200':
+          description: Delivery updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Delivery'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Deliveries
+      summary: Delete delivery
+      operationId: deleteDelivery
+      responses:
+        '204':
+          description: Delivery deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Delivery:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+        description: &id001
+          type: string
+        slug: &id002
+          type: string
+        code: &id003
+          type: string
+        threshold: &id004
+          type: number
+          format: float
+        active: &id005
+          type: boolean
+        dueDate: &id006
+          type: string
+          format: date
+        price: &id007
+          type: number
+          format: float
+        subtotal: &id008
+          type: number
+          format: float
+        categoryId: &id009
+          type: string
+          format: uuid
+        email: &id010
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    DeliveryList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Delivery'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateDeliveryRequest:
+      type: object
+      properties:
+        description: *id001
+        slug: *id002
+        code: *id003
+        threshold: *id004
+        active: *id005
+        dueDate: *id006
+        price: *id007
+        subtotal: *id008
+        categoryId: *id009
+        email: *id010
+      required:
+      - description
+      - slug
+    UpdateDeliveryRequest:
+      type: object
+      properties:
+        description: *id001
+        slug: *id002
+        code: *id003
+        threshold: *id004
+        active: *id005
+        dueDate: *id006
+        price: *id007
+        subtotal: *id008
+        categoryId: *id009
+        email: *id010
+      required:
+      - description
+      - slug
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

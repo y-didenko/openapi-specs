@@ -1,0 +1,316 @@
+openapi: 3.0.3
+info:
+  title: Cohorts API
+  description: Retention cohort analysis.
+  version: 1.0.0
+  contact:
+    name: Cohorts Team
+    email: cohorts@example.com
+servers:
+- url: https://api.example.com/cohorts/v1
+  description: Production
+- url: https://staging-api.example.com/cohorts/v1
+  description: Staging
+tags:
+- name: Cohorts
+  description: Cohorts resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /cohorts:
+    get:
+      tags:
+      - Cohorts
+      summary: List cohorts
+      operationId: listCohort
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of cohorts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CohortList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Cohorts
+      summary: Create cohort
+      operationId: createCohort
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCohortRequest'
+      responses:
+        '201':
+          description: Cohort created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cohort'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /cohorts/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Cohorts
+      summary: Get cohort by ID
+      operationId: getCohort
+      responses:
+        '200':
+          description: Cohort details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cohort'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Cohorts
+      summary: Update cohort
+      operationId: updateCohort
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCohortRequest'
+      responses:
+        '200':
+          description: Cohort updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cohort'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Cohorts
+      summary: Delete cohort
+      operationId: deleteCohort
+      responses:
+        '204':
+          description: Cohort deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Cohort:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - active
+          - inactive
+          - archived
+        description: &id001
+          type: string
+        title: &id002
+          type: string
+        code: &id003
+          type: string
+        score: &id004
+          type: number
+          format: float
+        archived: &id005
+          type: boolean
+        lastSeenAt: &id006
+          type: string
+          format: date-time
+        scheduledAt: &id007
+          type: string
+          format: date-time
+        currency: &id008
+          type: string
+        amount: &id009
+          type: number
+          format: float
+        updatedBy: &id010
+          type: string
+          format: uuid
+        teamId: &id011
+          type: string
+          format: uuid
+        phone: &id012
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    CohortList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cohort'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateCohortRequest:
+      type: object
+      properties:
+        description: *id001
+        title: *id002
+        code: *id003
+        score: *id004
+        archived: *id005
+        lastSeenAt: *id006
+        scheduledAt: *id007
+        currency: *id008
+        amount: *id009
+        updatedBy: *id010
+        teamId: *id011
+        phone: *id012
+      required:
+      - description
+      - title
+    UpdateCohortRequest:
+      type: object
+      properties:
+        description: *id001
+        title: *id002
+        code: *id003
+        score: *id004
+        archived: *id005
+        lastSeenAt: *id006
+        scheduledAt: *id007
+        currency: *id008
+        amount: *id009
+        updatedBy: *id010
+        teamId: *id011
+        phone: *id012
+      required:
+      - description
+      - title
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

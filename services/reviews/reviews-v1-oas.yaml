@@ -1,0 +1,525 @@
+openapi: 3.0.3
+info:
+  title: Reviews API
+  description: Product reviews, ratings, and moderation.
+  version: 1.0.0
+  contact:
+    name: Reviews Team
+    email: reviews@example.com
+servers:
+- url: https://api.example.com/reviews/v1
+  description: Production
+- url: https://staging-api.example.com/reviews/v1
+  description: Staging
+tags:
+- name: Reviews
+  description: Reviews resource operations.
+- name: Templates
+  description: Templates resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /reviews:
+    get:
+      tags:
+      - Reviews
+      summary: List reviews
+      operationId: listReview
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of reviews.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Reviews
+      summary: Create review
+      operationId: createReview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReviewRequest'
+      responses:
+        '201':
+          description: Review created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /reviews/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Reviews
+      summary: Get review by ID
+      operationId: getReview
+      responses:
+        '200':
+          description: Review details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Reviews
+      summary: Update review
+      operationId: updateReview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateReviewRequest'
+      responses:
+        '200':
+          description: Review updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Reviews
+      summary: Delete review
+      operationId: deleteReview
+      responses:
+        '204':
+          description: Review deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /templates:
+    get:
+      tags:
+      - Templates
+      summary: List templates
+      operationId: listTemplate
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of templates.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Templates
+      summary: Create template
+      operationId: createTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTemplateRequest'
+      responses:
+        '201':
+          description: Template created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /templates/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Templates
+      summary: Get template by ID
+      operationId: getTemplate
+      responses:
+        '200':
+          description: Template details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Templates
+      summary: Update template
+      operationId: updateTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTemplateRequest'
+      responses:
+        '200':
+          description: Template updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Templates
+      summary: Delete template
+      operationId: deleteTemplate
+      responses:
+        '204':
+          description: Template deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Review:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+        description: &id001
+          type: string
+        externalId: &id002
+          type: string
+        rank: &id003
+          type: integer
+        default: &id004
+          type: boolean
+        enabled: &id005
+          type: boolean
+        scheduledAt: &id006
+          type: string
+          format: date-time
+        startDate: &id007
+          type: string
+          format: date
+        updatedBy: &id008
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ReviewList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Review'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateReviewRequest:
+      type: object
+      properties:
+        description: *id001
+        externalId: *id002
+        rank: *id003
+        default: *id004
+        enabled: *id005
+        scheduledAt: *id006
+        startDate: *id007
+        updatedBy: *id008
+      required:
+      - description
+      - externalId
+    UpdateReviewRequest:
+      type: object
+      properties:
+        description: *id001
+        externalId: *id002
+        rank: *id003
+        default: *id004
+        enabled: *id005
+        scheduledAt: *id006
+        startDate: *id007
+        updatedBy: *id008
+      required:
+      - description
+      - externalId
+    Template:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - active
+          - inactive
+          - archived
+        summary: &id009
+          type: string
+        code: &id010
+          type: string
+        notes: &id011
+          type: string
+        rank: &id012
+          type: integer
+        version: &id013
+          type: integer
+        locked: &id014
+          type: boolean
+        lastSeenAt: &id015
+          type: string
+          format: date-time
+        expiresAt: &id016
+          type: string
+          format: date-time
+        subtotal: &id017
+          type: number
+          format: float
+        discount: &id018
+          type: number
+          format: float
+        organizationId: &id019
+          type: string
+          format: uuid
+        teamId: &id020
+          type: string
+          format: uuid
+        email: &id021
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    TemplateList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Template'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateTemplateRequest:
+      type: object
+      properties:
+        summary: *id009
+        code: *id010
+        notes: *id011
+        rank: *id012
+        version: *id013
+        locked: *id014
+        lastSeenAt: *id015
+        expiresAt: *id016
+        subtotal: *id017
+        discount: *id018
+        organizationId: *id019
+        teamId: *id020
+        email: *id021
+      required:
+      - summary
+      - code
+    UpdateTemplateRequest:
+      type: object
+      properties:
+        summary: *id009
+        code: *id010
+        notes: *id011
+        rank: *id012
+        version: *id013
+        locked: *id014
+        lastSeenAt: *id015
+        expiresAt: *id016
+        subtotal: *id017
+        discount: *id018
+        organizationId: *id019
+        teamId: *id020
+        email: *id021
+      required:
+      - summary
+      - code
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

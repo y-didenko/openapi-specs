@@ -1,0 +1,381 @@
+openapi: 3.0.3
+info:
+  title: Metrics API
+  description: Time-series metrics.
+  version: 1.3.4
+  contact:
+    name: Metrics Team
+    email: metrics@example.com
+servers:
+- url: https://api.example.com/metrics/v1
+  description: Production
+- url: https://staging-api.example.com/metrics/v1
+  description: Staging
+tags:
+- name: Metrics
+  description: Metrics resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /metrics:
+    get:
+      tags:
+      - Metrics
+      summary: List metrics
+      operationId: listMetric
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of metrics.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Metrics
+      summary: Create metric
+      operationId: createMetric
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMetricRequest'
+      responses:
+        '201':
+          description: Metric created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Metric'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /metrics/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Metrics
+      summary: Get metric by ID
+      operationId: getMetric
+      responses:
+        '200':
+          description: Metric details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Metric'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Metrics
+      summary: Update metric
+      operationId: updateMetric
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMetricRequest'
+      responses:
+        '200':
+          description: Metric updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Metric'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Metrics
+      summary: Delete metric
+      operationId: deleteMetric
+      responses:
+        '204':
+          description: Metric deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /metrics/search:
+    post:
+      tags:
+      - Metrics
+      summary: Advanced search across metrics
+      operationId: searchMetric
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricList'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Metric:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        code: &id001
+          type: string
+        summary: &id002
+          type: string
+        rank: &id003
+          type: integer
+        position: &id004
+          type: integer
+        locked: &id005
+          type: boolean
+        verified: &id006
+          type: boolean
+        publishedAt: &id007
+          type: string
+          format: date-time
+        currency: &id008
+          type: string
+        price: &id009
+          type: number
+          format: float
+        ownerId: &id010
+          type: string
+          format: uuid
+        websiteUrl: &id011
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    MetricList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Metric'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateMetricRequest:
+      type: object
+      properties:
+        code: *id001
+        summary: *id002
+        rank: *id003
+        position: *id004
+        locked: *id005
+        verified: *id006
+        publishedAt: *id007
+        currency: *id008
+        price: *id009
+        ownerId: *id010
+        websiteUrl: *id011
+      required:
+      - code
+      - summary
+    UpdateMetricRequest:
+      type: object
+      properties:
+        code: *id001
+        summary: *id002
+        rank: *id003
+        position: *id004
+        locked: *id005
+        verified: *id006
+        publishedAt: *id007
+        currency: *id008
+        price: *id009
+        ownerId: *id010
+        websiteUrl: *id011
+      required:
+      - code
+      - summary
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

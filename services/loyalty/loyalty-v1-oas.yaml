@@ -1,0 +1,373 @@
+openapi: 3.0.3
+info:
+  title: Loyalty Program API
+  description: Points, tiers, and rewards management.
+  version: 1.0.0
+  contact:
+    name: Loyalty Program Team
+    email: loyalty@example.com
+servers:
+- url: https://api.example.com/loyalty/v1
+  description: Production
+- url: https://staging-api.example.com/loyalty/v1
+  description: Staging
+tags:
+- name: Loyalty
+  description: Loyalty resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /loyalty:
+    get:
+      tags:
+      - Loyalty
+      summary: List loyalty
+      operationId: listLoyalty
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of loyalty.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoyaltyList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Loyalty
+      summary: Create loyalty
+      operationId: createLoyalty
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLoyaltyRequest'
+      responses:
+        '201':
+          description: Loyalty created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Loyalty'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /loyalty/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Loyalty
+      summary: Get loyalty by ID
+      operationId: getLoyalty
+      responses:
+        '200':
+          description: Loyalty details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Loyalty'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Loyalty
+      summary: Update loyalty
+      operationId: updateLoyalty
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLoyaltyRequest'
+      responses:
+        '200':
+          description: Loyalty updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Loyalty'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Loyalty
+      summary: Delete loyalty
+      operationId: deleteLoyalty
+      responses:
+        '204':
+          description: Loyalty deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /loyalty/search:
+    post:
+      tags:
+      - Loyalty
+      summary: Advanced search across loyalty
+      operationId: searchLoyalty
+      description: Submit a structured query for complex filtering not expressible via the list endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      op:
+                        type: string
+                        enum:
+                        - eq
+                        - ne
+                        - gt
+                        - lt
+                        - in
+                        - contains
+                      value: {}
+                sort:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      direction:
+                        type: string
+                        enum:
+                        - asc
+                        - desc
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 200
+            example:
+              filters:
+              - field: status
+                op: eq
+                value: active
+              - field: createdAt
+                op: gt
+                value: '2026-01-01T00:00:00Z'
+              sort:
+              - field: createdAt
+                direction: desc
+              page: 1
+              limit: 50
+      responses:
+        '200':
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoyaltyList'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Loyalty:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        slug: &id001
+          type: string
+        externalId: &id002
+          type: string
+        capacity: &id003
+          type: integer
+        weight: &id004
+          type: number
+          format: float
+        locked: &id005
+          type: boolean
+        default: &id006
+          type: boolean
+        completedAt: &id007
+          type: string
+          format: date-time
+        organizationId: &id008
+          type: string
+          format: uuid
+        teamId: &id009
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LoyaltyList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Loyalty'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLoyaltyRequest:
+      type: object
+      properties:
+        slug: *id001
+        externalId: *id002
+        capacity: *id003
+        weight: *id004
+        locked: *id005
+        default: *id006
+        completedAt: *id007
+        organizationId: *id008
+        teamId: *id009
+      required:
+      - slug
+      - externalId
+    UpdateLoyaltyRequest:
+      type: object
+      properties:
+        slug: *id001
+        externalId: *id002
+        capacity: *id003
+        weight: *id004
+        locked: *id005
+        default: *id006
+        completedAt: *id007
+        organizationId: *id008
+        teamId: *id009
+      required:
+      - slug
+      - externalId
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

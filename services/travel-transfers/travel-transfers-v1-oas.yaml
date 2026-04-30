@@ -1,0 +1,303 @@
+openapi: 3.0.3
+info:
+  title: Travel Transfers API
+  description: Airport transfers and ground transport.
+  version: 2.0.0
+  contact:
+    name: Travel Transfers Team
+    email: traveltransfers@example.com
+servers:
+- url: https://api.example.com/travel-transfers/v1
+  description: Production
+- url: https://staging-api.example.com/travel-transfers/v1
+  description: Staging
+tags:
+- name: Travel Transfers
+  description: Travel Transfers resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /travel-transfers:
+    get:
+      tags:
+      - Travel Transfers
+      summary: List travel transfers
+      operationId: listTravelTransfer
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of travel transfers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TravelTransferList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Travel Transfers
+      summary: Create travel transfer
+      operationId: createTravelTransfer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTravelTransferRequest'
+      responses:
+        '201':
+          description: Travel Transfer created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TravelTransfer'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /travel-transfers/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Travel Transfers
+      summary: Get travel transfer by ID
+      operationId: getTravelTransfer
+      responses:
+        '200':
+          description: Travel Transfer details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TravelTransfer'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Travel Transfers
+      summary: Update travel transfer
+      operationId: updateTravelTransfer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTravelTransferRequest'
+      responses:
+        '200':
+          description: Travel Transfer updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TravelTransfer'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Travel Transfers
+      summary: Delete travel transfer
+      operationId: deleteTravelTransfer
+      responses:
+        '204':
+          description: Travel Transfer deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    TravelTransfer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+        displayName: &id001
+          type: string
+        description: &id002
+          type: string
+        title: &id003
+          type: string
+        weight: &id004
+          type: number
+          format: float
+        visible: &id005
+          type: boolean
+        lastSeenAt: &id006
+          type: string
+          format: date-time
+        completedAt: &id007
+          type: string
+          format: date-time
+        organizationId: &id008
+          type: string
+          format: uuid
+        updatedBy: &id009
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    TravelTransferList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TravelTransfer'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateTravelTransferRequest:
+      type: object
+      properties:
+        displayName: *id001
+        description: *id002
+        title: *id003
+        weight: *id004
+        visible: *id005
+        lastSeenAt: *id006
+        completedAt: *id007
+        organizationId: *id008
+        updatedBy: *id009
+      required:
+      - displayName
+      - description
+    UpdateTravelTransferRequest:
+      type: object
+      properties:
+        displayName: *id001
+        description: *id002
+        title: *id003
+        weight: *id004
+        visible: *id005
+        lastSeenAt: *id006
+        completedAt: *id007
+        organizationId: *id008
+        updatedBy: *id009
+      required:
+      - displayName
+      - description
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

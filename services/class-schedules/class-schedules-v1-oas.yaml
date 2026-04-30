@@ -1,0 +1,297 @@
+openapi: 3.0.3
+info:
+  title: Class Schedules API
+  description: Class timetables.
+  version: 1.1.0
+  contact:
+    name: Class Schedules Team
+    email: classschedules@example.com
+servers:
+- url: https://api.example.com/class-schedules/v1
+  description: Production
+- url: https://staging-api.example.com/class-schedules/v1
+  description: Staging
+tags:
+- name: Class Schedules
+  description: Class Schedules resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /class-schedules:
+    get:
+      tags:
+      - Class Schedules
+      summary: List class schedules
+      operationId: listClassSchedule
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of class schedules.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassScheduleList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Class Schedules
+      summary: Create class schedule
+      operationId: createClassSchedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateClassScheduleRequest'
+      responses:
+        '201':
+          description: Class Schedule created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassSchedule'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /class-schedules/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Class Schedules
+      summary: Get class schedule by ID
+      operationId: getClassSchedule
+      responses:
+        '200':
+          description: Class Schedule details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassSchedule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Class Schedules
+      summary: Update class schedule
+      operationId: updateClassSchedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateClassScheduleRequest'
+      responses:
+        '200':
+          description: Class Schedule updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassSchedule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Class Schedules
+      summary: Delete class schedule
+      operationId: deleteClassSchedule
+      responses:
+        '204':
+          description: Class Schedule deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    ClassSchedule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        reference: &id001
+          type: string
+        description: &id002
+          type: string
+        code: &id003
+          type: string
+        weight: &id004
+          type: number
+          format: float
+        default: &id005
+          type: boolean
+        lastSeenAt: &id006
+          type: string
+          format: date-time
+        organizationId: &id007
+          type: string
+          format: uuid
+        createdBy: &id008
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ClassScheduleList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClassSchedule'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateClassScheduleRequest:
+      type: object
+      properties:
+        reference: *id001
+        description: *id002
+        code: *id003
+        weight: *id004
+        default: *id005
+        lastSeenAt: *id006
+        organizationId: *id007
+        createdBy: *id008
+      required:
+      - reference
+      - description
+    UpdateClassScheduleRequest:
+      type: object
+      properties:
+        reference: *id001
+        description: *id002
+        code: *id003
+        weight: *id004
+        default: *id005
+        lastSeenAt: *id006
+        organizationId: *id007
+        createdBy: *id008
+      required:
+      - reference
+      - description
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

@@ -1,0 +1,527 @@
+openapi: 3.0.3
+info:
+  title: Healthchecks API
+  description: Service health probes.
+  version: 2.0.0
+  contact:
+    name: Healthchecks Team
+    email: healthchecks@example.com
+servers:
+- url: https://api.example.com/healthchecks/v1
+  description: Production
+- url: https://staging-api.example.com/healthchecks/v1
+  description: Staging
+tags:
+- name: Healthchecks
+  description: Healthchecks resource operations.
+- name: Events
+  description: Events resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /healthchecks:
+    get:
+      tags:
+      - Healthchecks
+      summary: List healthchecks
+      operationId: listHealthcheck
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of healthchecks.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthcheckList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Healthchecks
+      summary: Create healthcheck
+      operationId: createHealthcheck
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHealthcheckRequest'
+      responses:
+        '201':
+          description: Healthcheck created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Healthcheck'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /healthchecks/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Healthchecks
+      summary: Get healthcheck by ID
+      operationId: getHealthcheck
+      responses:
+        '200':
+          description: Healthcheck details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Healthcheck'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Healthchecks
+      summary: Update healthcheck
+      operationId: updateHealthcheck
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHealthcheckRequest'
+      responses:
+        '200':
+          description: Healthcheck updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Healthcheck'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Healthchecks
+      summary: Delete healthcheck
+      operationId: deleteHealthcheck
+      responses:
+        '204':
+          description: Healthcheck deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /events:
+    get:
+      tags:
+      - Events
+      summary: List events
+      operationId: listEvent
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of events.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Events
+      summary: Create event
+      operationId: createEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventRequest'
+      responses:
+        '201':
+          description: Event created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /events/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Events
+      summary: Get event by ID
+      operationId: getEvent
+      responses:
+        '200':
+          description: Event details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Events
+      summary: Update event
+      operationId: updateEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEventRequest'
+      responses:
+        '200':
+          description: Event updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Events
+      summary: Delete event
+      operationId: deleteEvent
+      responses:
+        '204':
+          description: Event deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Healthcheck:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - active
+          - inactive
+          - archived
+        title: &id001
+          type: string
+        name: &id002
+          type: string
+        weight: &id003
+          type: number
+          format: float
+        priority: &id004
+          type: integer
+        locked: &id005
+          type: boolean
+        lastSeenAt: &id006
+          type: string
+          format: date-time
+        subtotal: &id007
+          type: number
+          format: float
+        total: &id008
+          type: number
+          format: float
+        createdBy: &id009
+          type: string
+          format: uuid
+        parentId: &id010
+          type: string
+          format: uuid
+        email: &id011
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    HealthcheckList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Healthcheck'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateHealthcheckRequest:
+      type: object
+      properties:
+        title: *id001
+        name: *id002
+        weight: *id003
+        priority: *id004
+        locked: *id005
+        lastSeenAt: *id006
+        subtotal: *id007
+        total: *id008
+        createdBy: *id009
+        parentId: *id010
+        email: *id011
+      required:
+      - title
+      - name
+    UpdateHealthcheckRequest:
+      type: object
+      properties:
+        title: *id001
+        name: *id002
+        weight: *id003
+        priority: *id004
+        locked: *id005
+        lastSeenAt: *id006
+        subtotal: *id007
+        total: *id008
+        createdBy: *id009
+        parentId: *id010
+        email: *id011
+      required:
+      - title
+      - name
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        summary: &id012
+          type: string
+        externalId: &id013
+          type: string
+        slug: &id014
+          type: string
+        rank: &id015
+          type: integer
+        locked: &id016
+          type: boolean
+        lastSeenAt: &id017
+          type: string
+          format: date-time
+        amount: &id018
+          type: number
+          format: float
+        currency: &id019
+          type: string
+        parentId: &id020
+          type: string
+          format: uuid
+        teamId: &id021
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    EventList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateEventRequest:
+      type: object
+      properties:
+        summary: *id012
+        externalId: *id013
+        slug: *id014
+        rank: *id015
+        locked: *id016
+        lastSeenAt: *id017
+        amount: *id018
+        currency: *id019
+        parentId: *id020
+        teamId: *id021
+      required:
+      - summary
+      - externalId
+    UpdateEventRequest:
+      type: object
+      properties:
+        summary: *id012
+        externalId: *id013
+        slug: *id014
+        rank: *id015
+        locked: *id016
+        lastSeenAt: *id017
+        amount: *id018
+        currency: *id019
+        parentId: *id020
+        teamId: *id021
+      required:
+      - summary
+      - externalId
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

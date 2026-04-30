@@ -1,0 +1,534 @@
+openapi: 3.0.3
+info:
+  title: Cards API
+  description: Card issuance, controls, and tokens.
+  version: 2.0.0
+  contact:
+    name: Cards Team
+    email: cards@example.com
+servers:
+- url: https://api.example.com/cards/v1
+  description: Production
+- url: https://staging-api.example.com/cards/v1
+  description: Staging
+tags:
+- name: Cards
+  description: Cards resource operations.
+- name: Policies
+  description: Policies resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /cards:
+    get:
+      tags:
+      - Cards
+      summary: List cards
+      operationId: listCard
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of cards.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Cards
+      summary: Create card
+      operationId: createCard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCardRequest'
+      responses:
+        '201':
+          description: Card created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /cards/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Cards
+      summary: Get card by ID
+      operationId: getCard
+      responses:
+        '200':
+          description: Card details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Cards
+      summary: Update card
+      operationId: updateCard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCardRequest'
+      responses:
+        '200':
+          description: Card updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Cards
+      summary: Delete card
+      operationId: deleteCard
+      responses:
+        '204':
+          description: Card deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /policies:
+    get:
+      tags:
+      - Policies
+      summary: List policies
+      operationId: listPolicy
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of policies.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Policies
+      summary: Create policy
+      operationId: createPolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePolicyRequest'
+      responses:
+        '201':
+          description: Policy created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /policies/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Policies
+      summary: Get policy by ID
+      operationId: getPolicy
+      responses:
+        '200':
+          description: Policy details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Policies
+      summary: Update policy
+      operationId: updatePolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePolicyRequest'
+      responses:
+        '200':
+          description: Policy updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Policies
+      summary: Delete policy
+      operationId: deletePolicy
+      responses:
+        '204':
+          description: Policy deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Card:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        name: &id001
+          type: string
+        title: &id002
+          type: string
+        displayName: &id003
+          type: string
+        capacity: &id004
+          type: integer
+        score: &id005
+          type: number
+          format: float
+        visible: &id006
+          type: boolean
+        enabled: &id007
+          type: boolean
+        lastSeenAt: &id008
+          type: string
+          format: date-time
+        completedAt: &id009
+          type: string
+          format: date-time
+        discount: &id010
+          type: number
+          format: float
+        total: &id011
+          type: number
+          format: float
+        createdBy: &id012
+          type: string
+          format: uuid
+        organizationId: &id013
+          type: string
+          format: uuid
+        websiteUrl: &id014
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    CardList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Card'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateCardRequest:
+      type: object
+      properties:
+        name: *id001
+        title: *id002
+        displayName: *id003
+        capacity: *id004
+        score: *id005
+        visible: *id006
+        enabled: *id007
+        lastSeenAt: *id008
+        completedAt: *id009
+        discount: *id010
+        total: *id011
+        createdBy: *id012
+        organizationId: *id013
+        websiteUrl: *id014
+      required:
+      - name
+      - title
+    UpdateCardRequest:
+      type: object
+      properties:
+        name: *id001
+        title: *id002
+        displayName: *id003
+        capacity: *id004
+        score: *id005
+        visible: *id006
+        enabled: *id007
+        lastSeenAt: *id008
+        completedAt: *id009
+        discount: *id010
+        total: *id011
+        createdBy: *id012
+        organizationId: *id013
+        websiteUrl: *id014
+      required:
+      - name
+      - title
+    Policy:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        slug: &id015
+          type: string
+        notes: &id016
+          type: string
+        code: &id017
+          type: string
+        archived: &id018
+          type: boolean
+        locked: &id019
+          type: boolean
+        scheduledAt: &id020
+          type: string
+          format: date-time
+        currency: &id021
+          type: string
+        total: &id022
+          type: number
+          format: float
+        organizationId: &id023
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    PolicyList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Policy'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreatePolicyRequest:
+      type: object
+      properties:
+        slug: *id015
+        notes: *id016
+        code: *id017
+        archived: *id018
+        locked: *id019
+        scheduledAt: *id020
+        currency: *id021
+        total: *id022
+        organizationId: *id023
+      required:
+      - slug
+      - notes
+    UpdatePolicyRequest:
+      type: object
+      properties:
+        slug: *id015
+        notes: *id016
+        code: *id017
+        archived: *id018
+        locked: *id019
+        scheduledAt: *id020
+        currency: *id021
+        total: *id022
+        organizationId: *id023
+      required:
+      - slug
+      - notes
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

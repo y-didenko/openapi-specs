@@ -1,0 +1,503 @@
+openapi: 3.0.3
+info:
+  title: Releases API
+  description: Release packaging and changelogs.
+  version: 2.0.0
+  contact:
+    name: Releases Team
+    email: releases@example.com
+servers:
+- url: https://api.example.com/releases/v1
+  description: Production
+- url: https://staging-api.example.com/releases/v1
+  description: Staging
+tags:
+- name: Releases
+  description: Releases resource operations.
+- name: Rules
+  description: Rules resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /releases:
+    get:
+      tags:
+      - Releases
+      summary: List releases
+      operationId: listReleas
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of releases.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReleasList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Releases
+      summary: Create releas
+      operationId: createRelea
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReleasRequest'
+      responses:
+        '201':
+          description: Releas created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Releas'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /releases/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Releases
+      summary: Get releas by ID
+      operationId: getRelea
+      responses:
+        '200':
+          description: Releas details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Releas'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Releases
+      summary: Update releas
+      operationId: updateRelea
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateReleasRequest'
+      responses:
+        '200':
+          description: Releas updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Releas'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Releases
+      summary: Delete releas
+      operationId: deleteRelea
+      responses:
+        '204':
+          description: Releas deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /rules:
+    get:
+      tags:
+      - Rules
+      summary: List rules
+      operationId: listRule
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of rules.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RuleList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Rules
+      summary: Create rule
+      operationId: createRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRuleRequest'
+      responses:
+        '201':
+          description: Rule created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /rules/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Rules
+      summary: Get rule by ID
+      operationId: getRule
+      responses:
+        '200':
+          description: Rule details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Rules
+      summary: Update rule
+      operationId: updateRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRuleRequest'
+      responses:
+        '200':
+          description: Rule updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Rules
+      summary: Delete rule
+      operationId: deleteRule
+      responses:
+        '204':
+          description: Rule deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Releas:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+        code: &id001
+          type: string
+        description: &id002
+          type: string
+        locked: &id003
+          type: boolean
+        dueDate: &id004
+          type: string
+          format: date
+        price: &id005
+          type: number
+          format: float
+        amount: &id006
+          type: number
+          format: float
+        updatedBy: &id007
+          type: string
+          format: uuid
+        phone: &id008
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ReleasList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Releas'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateReleasRequest:
+      type: object
+      properties:
+        code: *id001
+        description: *id002
+        locked: *id003
+        dueDate: *id004
+        price: *id005
+        amount: *id006
+        updatedBy: *id007
+        phone: *id008
+      required:
+      - code
+      - description
+    UpdateReleasRequest:
+      type: object
+      properties:
+        code: *id001
+        description: *id002
+        locked: *id003
+        dueDate: *id004
+        price: *id005
+        amount: *id006
+        updatedBy: *id007
+        phone: *id008
+      required:
+      - code
+      - description
+    Rule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - scheduled
+          - running
+          - completed
+          - failed
+        displayName: &id009
+          type: string
+        description: &id010
+          type: string
+        verified: &id011
+          type: boolean
+        default: &id012
+          type: boolean
+        completedAt: &id013
+          type: string
+          format: date-time
+        subtotal: &id014
+          type: number
+          format: float
+        ownerId: &id015
+          type: string
+          format: uuid
+        websiteUrl: &id016
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    RuleList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Rule'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateRuleRequest:
+      type: object
+      properties:
+        displayName: *id009
+        description: *id010
+        verified: *id011
+        default: *id012
+        completedAt: *id013
+        subtotal: *id014
+        ownerId: *id015
+        websiteUrl: *id016
+      required:
+      - displayName
+      - description
+    UpdateRuleRequest:
+      type: object
+      properties:
+        displayName: *id009
+        description: *id010
+        verified: *id011
+        default: *id012
+        completedAt: *id013
+        subtotal: *id014
+        ownerId: *id015
+        websiteUrl: *id016
+      required:
+      - displayName
+      - description
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

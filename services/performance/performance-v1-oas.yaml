@@ -1,0 +1,359 @@
+openapi: 3.0.3
+info:
+  title: Performance API
+  description: Performance review cycles.
+  version: 1.3.4
+  contact:
+    name: Performance Team
+    email: performance@example.com
+servers:
+- url: https://api.example.com/performance/v1
+  description: Production
+- url: https://staging-api.example.com/performance/v1
+  description: Staging
+tags:
+- name: Performance
+  description: Performance resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /performance:
+    get:
+      tags:
+      - Performance
+      summary: List performance
+      operationId: listPerformance
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of performance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerformanceList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Performance
+      summary: Create performance
+      operationId: createPerformance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePerformanceRequest'
+      responses:
+        '201':
+          description: Performance created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Performance'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /performance/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Performance
+      summary: Get performance by ID
+      operationId: getPerformance
+      responses:
+        '200':
+          description: Performance details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Performance'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Performance
+      summary: Update performance
+      operationId: updatePerformance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePerformanceRequest'
+      responses:
+        '200':
+          description: Performance updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Performance'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Performance
+      summary: Delete performance
+      operationId: deletePerformance
+      responses:
+        '204':
+          description: Performance deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /performance/stats:
+    get:
+      tags:
+      - Performance
+      summary: Aggregate performance stats
+      operationId: getPerformanceStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Performance:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+        summary: &id001
+          type: string
+        reference: &id002
+          type: string
+        archived: &id003
+          type: boolean
+        lastSeenAt: &id004
+          type: string
+          format: date-time
+        expiresAt: &id005
+          type: string
+          format: date-time
+        total: &id006
+          type: number
+          format: float
+        organizationId: &id007
+          type: string
+          format: uuid
+        createdBy: &id008
+          type: string
+          format: uuid
+        websiteUrl: &id009
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    PerformanceList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Performance'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreatePerformanceRequest:
+      type: object
+      properties:
+        summary: *id001
+        reference: *id002
+        archived: *id003
+        lastSeenAt: *id004
+        expiresAt: *id005
+        total: *id006
+        organizationId: *id007
+        createdBy: *id008
+        websiteUrl: *id009
+      required:
+      - summary
+      - reference
+    UpdatePerformanceRequest:
+      type: object
+      properties:
+        summary: *id001
+        reference: *id002
+        archived: *id003
+        lastSeenAt: *id004
+        expiresAt: *id005
+        total: *id006
+        organizationId: *id007
+        createdBy: *id008
+        websiteUrl: *id009
+      required:
+      - summary
+      - reference
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

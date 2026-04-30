@@ -1,0 +1,514 @@
+openapi: 3.0.3
+info:
+  title: Recommendations API
+  description: Personalized product recommendations.
+  version: 2.1.0
+  contact:
+    name: Recommendations Team
+    email: recommendations@example.com
+servers:
+- url: https://api.example.com/recommendations/v1
+  description: Production
+- url: https://staging-api.example.com/recommendations/v1
+  description: Staging
+tags:
+- name: Recommendations
+  description: Recommendations resource operations.
+- name: Policies
+  description: Policies resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /recommendations:
+    get:
+      tags:
+      - Recommendations
+      summary: List recommendations
+      operationId: listRecommendation
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of recommendations.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Recommendations
+      summary: Create recommendation
+      operationId: createRecommendation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRecommendationRequest'
+      responses:
+        '201':
+          description: Recommendation created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recommendation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /recommendations/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Recommendations
+      summary: Get recommendation by ID
+      operationId: getRecommendation
+      responses:
+        '200':
+          description: Recommendation details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recommendation'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Recommendations
+      summary: Update recommendation
+      operationId: updateRecommendation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRecommendationRequest'
+      responses:
+        '200':
+          description: Recommendation updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recommendation'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Recommendations
+      summary: Delete recommendation
+      operationId: deleteRecommendation
+      responses:
+        '204':
+          description: Recommendation deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /policies:
+    get:
+      tags:
+      - Policies
+      summary: List policies
+      operationId: listPolicy
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of policies.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Policies
+      summary: Create policy
+      operationId: createPolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePolicyRequest'
+      responses:
+        '201':
+          description: Policy created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /policies/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Policies
+      summary: Get policy by ID
+      operationId: getPolicy
+      responses:
+        '200':
+          description: Policy details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Policies
+      summary: Update policy
+      operationId: updatePolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePolicyRequest'
+      responses:
+        '200':
+          description: Policy updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Policies
+      summary: Delete policy
+      operationId: deletePolicy
+      responses:
+        '204':
+          description: Policy deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Recommendation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        summary: &id001
+          type: string
+        externalId: &id002
+          type: string
+        description: &id003
+          type: string
+        count: &id004
+          type: integer
+        archived: &id005
+          type: boolean
+        verified: &id006
+          type: boolean
+        scheduledAt: &id007
+          type: string
+          format: date-time
+        lastSeenAt: &id008
+          type: string
+          format: date-time
+        parentId: &id009
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    RecommendationList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Recommendation'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateRecommendationRequest:
+      type: object
+      properties:
+        summary: *id001
+        externalId: *id002
+        description: *id003
+        count: *id004
+        archived: *id005
+        verified: *id006
+        scheduledAt: *id007
+        lastSeenAt: *id008
+        parentId: *id009
+      required:
+      - summary
+      - externalId
+    UpdateRecommendationRequest:
+      type: object
+      properties:
+        summary: *id001
+        externalId: *id002
+        description: *id003
+        count: *id004
+        archived: *id005
+        verified: *id006
+        scheduledAt: *id007
+        lastSeenAt: *id008
+        parentId: *id009
+      required:
+      - summary
+      - externalId
+    Policy:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        reference: &id010
+          type: string
+        name: &id011
+          type: string
+        title: &id012
+          type: string
+        locked: &id013
+          type: boolean
+        startDate: &id014
+          type: string
+          format: date
+        scheduledAt: &id015
+          type: string
+          format: date-time
+        amount: &id016
+          type: number
+          format: float
+        subtotal: &id017
+          type: number
+          format: float
+        ownerId: &id018
+          type: string
+          format: uuid
+        websiteUrl: &id019
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    PolicyList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Policy'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreatePolicyRequest:
+      type: object
+      properties:
+        reference: *id010
+        name: *id011
+        title: *id012
+        locked: *id013
+        startDate: *id014
+        scheduledAt: *id015
+        amount: *id016
+        subtotal: *id017
+        ownerId: *id018
+        websiteUrl: *id019
+      required:
+      - reference
+      - name
+    UpdatePolicyRequest:
+      type: object
+      properties:
+        reference: *id010
+        name: *id011
+        title: *id012
+        locked: *id013
+        startDate: *id014
+        scheduledAt: *id015
+        amount: *id016
+        subtotal: *id017
+        ownerId: *id018
+        websiteUrl: *id019
+      required:
+      - reference
+      - name
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

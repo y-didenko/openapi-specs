@@ -1,0 +1,521 @@
+openapi: 3.0.3
+info:
+  title: Shipments API
+  description: Outbound shipments and labels.
+  version: 1.2.0
+  contact:
+    name: Shipments Team
+    email: shipments@example.com
+servers:
+- url: https://api.example.com/shipments/v1
+  description: Production
+- url: https://staging-api.example.com/shipments/v1
+  description: Staging
+tags:
+- name: Shipments
+  description: Shipments resource operations.
+- name: Shares
+  description: Shares resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /shipments:
+    get:
+      tags:
+      - Shipments
+      summary: List shipments
+      operationId: listShipment
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of shipments.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Shipments
+      summary: Create shipment
+      operationId: createShipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShipmentRequest'
+      responses:
+        '201':
+          description: Shipment created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shipment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /shipments/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Shipments
+      summary: Get shipment by ID
+      operationId: getShipment
+      responses:
+        '200':
+          description: Shipment details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shipment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Shipments
+      summary: Update shipment
+      operationId: updateShipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateShipmentRequest'
+      responses:
+        '200':
+          description: Shipment updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shipment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Shipments
+      summary: Delete shipment
+      operationId: deleteShipment
+      responses:
+        '204':
+          description: Shipment deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /shares:
+    get:
+      tags:
+      - Shares
+      summary: List shares
+      operationId: listShare
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of shares.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShareList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Shares
+      summary: Create share
+      operationId: createShare
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShareRequest'
+      responses:
+        '201':
+          description: Share created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /shares/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Shares
+      summary: Get share by ID
+      operationId: getShare
+      responses:
+        '200':
+          description: Share details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Shares
+      summary: Update share
+      operationId: updateShare
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateShareRequest'
+      responses:
+        '200':
+          description: Share updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Shares
+      summary: Delete share
+      operationId: deleteShare
+      responses:
+        '204':
+          description: Share deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Shipment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        title: &id001
+          type: string
+        reference: &id002
+          type: string
+        enabled: &id003
+          type: boolean
+        verified: &id004
+          type: boolean
+        lastSeenAt: &id005
+          type: string
+          format: date-time
+        currency: &id006
+          type: string
+        organizationId: &id007
+          type: string
+          format: uuid
+        ownerId: &id008
+          type: string
+          format: uuid
+        email: &id009
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ShipmentList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Shipment'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateShipmentRequest:
+      type: object
+      properties:
+        title: *id001
+        reference: *id002
+        enabled: *id003
+        verified: *id004
+        lastSeenAt: *id005
+        currency: *id006
+        organizationId: *id007
+        ownerId: *id008
+        email: *id009
+      required:
+      - title
+      - reference
+    UpdateShipmentRequest:
+      type: object
+      properties:
+        title: *id001
+        reference: *id002
+        enabled: *id003
+        verified: *id004
+        lastSeenAt: *id005
+        currency: *id006
+        organizationId: *id007
+        ownerId: *id008
+        email: *id009
+      required:
+      - title
+      - reference
+    Share:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - scheduled
+          - running
+          - completed
+          - failed
+        code: &id010
+          type: string
+        title: &id011
+          type: string
+        version: &id012
+          type: integer
+        priority: &id013
+          type: integer
+        visible: &id014
+          type: boolean
+        locked: &id015
+          type: boolean
+        dueDate: &id016
+          type: string
+          format: date
+        scheduledAt: &id017
+          type: string
+          format: date-time
+        discount: &id018
+          type: number
+          format: float
+        updatedBy: &id019
+          type: string
+          format: uuid
+        websiteUrl: &id020
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ShareList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Share'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateShareRequest:
+      type: object
+      properties:
+        code: *id010
+        title: *id011
+        version: *id012
+        priority: *id013
+        visible: *id014
+        locked: *id015
+        dueDate: *id016
+        scheduledAt: *id017
+        discount: *id018
+        updatedBy: *id019
+        websiteUrl: *id020
+      required:
+      - code
+      - title
+    UpdateShareRequest:
+      type: object
+      properties:
+        code: *id010
+        title: *id011
+        version: *id012
+        priority: *id013
+        visible: *id014
+        locked: *id015
+        dueDate: *id016
+        scheduledAt: *id017
+        discount: *id018
+        updatedBy: *id019
+        websiteUrl: *id020
+      required:
+      - code
+      - title
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

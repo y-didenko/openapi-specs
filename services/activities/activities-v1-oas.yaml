@@ -1,0 +1,306 @@
+openapi: 3.0.3
+info:
+  title: Activities API
+  description: Sales activity logging.
+  version: 2.1.0
+  contact:
+    name: Activities Team
+    email: activities@example.com
+servers:
+- url: https://api.example.com/activities/v1
+  description: Production
+- url: https://staging-api.example.com/activities/v1
+  description: Staging
+tags:
+- name: Activities
+  description: Activities resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /activities:
+    get:
+      tags:
+      - Activities
+      summary: List activities
+      operationId: listActivity
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of activities.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Activities
+      summary: Create activity
+      operationId: createActivity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateActivityRequest'
+      responses:
+        '201':
+          description: Activity created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /activities/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Activities
+      summary: Get activity by ID
+      operationId: getActivity
+      responses:
+        '200':
+          description: Activity details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Activities
+      summary: Update activity
+      operationId: updateActivity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateActivityRequest'
+      responses:
+        '200':
+          description: Activity updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activity'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Activities
+      summary: Delete activity
+      operationId: deleteActivity
+      responses:
+        '204':
+          description: Activity deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Activity:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        description: &id001
+          type: string
+        summary: &id002
+          type: string
+        default: &id003
+          type: boolean
+        active: &id004
+          type: boolean
+        publishedAt: &id005
+          type: string
+          format: date-time
+        lastSeenAt: &id006
+          type: string
+          format: date-time
+        subtotal: &id007
+          type: number
+          format: float
+        currency: &id008
+          type: string
+        updatedBy: &id009
+          type: string
+          format: uuid
+        tagId: &id010
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    ActivityList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Activity'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateActivityRequest:
+      type: object
+      properties:
+        description: *id001
+        summary: *id002
+        default: *id003
+        active: *id004
+        publishedAt: *id005
+        lastSeenAt: *id006
+        subtotal: *id007
+        currency: *id008
+        updatedBy: *id009
+        tagId: *id010
+      required:
+      - description
+      - summary
+    UpdateActivityRequest:
+      type: object
+      properties:
+        description: *id001
+        summary: *id002
+        default: *id003
+        active: *id004
+        publishedAt: *id005
+        lastSeenAt: *id006
+        subtotal: *id007
+        currency: *id008
+        updatedBy: *id009
+        tagId: *id010
+      required:
+      - description
+      - summary
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

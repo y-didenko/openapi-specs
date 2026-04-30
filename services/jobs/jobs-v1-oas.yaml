@@ -1,0 +1,319 @@
+openapi: 3.0.3
+info:
+  title: Jobs API
+  description: Background job orchestration.
+  version: 1.0.0
+  contact:
+    name: Jobs Team
+    email: jobs@example.com
+servers:
+- url: https://api.example.com/jobs/v1
+  description: Production
+- url: https://staging-api.example.com/jobs/v1
+  description: Staging
+tags:
+- name: Jobs
+  description: Jobs resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /jobs:
+    get:
+      tags:
+      - Jobs
+      summary: List jobs
+      operationId: listJob
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of jobs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Jobs
+      summary: Create job
+      operationId: createJob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateJobRequest'
+      responses:
+        '201':
+          description: Job created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /jobs/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Jobs
+      summary: Get job by ID
+      operationId: getJob
+      responses:
+        '200':
+          description: Job details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Jobs
+      summary: Update job
+      operationId: updateJob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateJobRequest'
+      responses:
+        '200':
+          description: Job updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Jobs
+      summary: Delete job
+      operationId: deleteJob
+      responses:
+        '204':
+          description: Job deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Job:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+        description: &id001
+          type: string
+        code: &id002
+          type: string
+        notes: &id003
+          type: string
+        position: &id004
+          type: integer
+        weight: &id005
+          type: number
+          format: float
+        archived: &id006
+          type: boolean
+        default: &id007
+          type: boolean
+        endDate: &id008
+          type: string
+          format: date
+        expiresAt: &id009
+          type: string
+          format: date-time
+        amount: &id010
+          type: number
+          format: float
+        subtotal: &id011
+          type: number
+          format: float
+        organizationId: &id012
+          type: string
+          format: uuid
+        ownerId: &id013
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    JobList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Job'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateJobRequest:
+      type: object
+      properties:
+        description: *id001
+        code: *id002
+        notes: *id003
+        position: *id004
+        weight: *id005
+        archived: *id006
+        default: *id007
+        endDate: *id008
+        expiresAt: *id009
+        amount: *id010
+        subtotal: *id011
+        organizationId: *id012
+        ownerId: *id013
+      required:
+      - description
+      - code
+    UpdateJobRequest:
+      type: object
+      properties:
+        description: *id001
+        code: *id002
+        notes: *id003
+        position: *id004
+        weight: *id005
+        archived: *id006
+        default: *id007
+        endDate: *id008
+        expiresAt: *id009
+        amount: *id010
+        subtotal: *id011
+        organizationId: *id012
+        ownerId: *id013
+      required:
+      - description
+      - code
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

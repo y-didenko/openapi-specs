@@ -1,0 +1,306 @@
+openapi: 3.0.3
+info:
+  title: Quotes API
+  description: Real-time market quotes.
+  version: 1.2.0
+  contact:
+    name: Quotes Team
+    email: quotes@example.com
+servers:
+- url: https://api.example.com/quotes/v1
+  description: Production
+- url: https://staging-api.example.com/quotes/v1
+  description: Staging
+tags:
+- name: Quotes
+  description: Quotes resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /quotes:
+    get:
+      tags:
+      - Quotes
+      summary: List quotes
+      operationId: listQuote
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of quotes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Quotes
+      summary: Create quote
+      operationId: createQuote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQuoteRequest'
+      responses:
+        '201':
+          description: Quote created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /quotes/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Quotes
+      summary: Get quote by ID
+      operationId: getQuote
+      responses:
+        '200':
+          description: Quote details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Quotes
+      summary: Update quote
+      operationId: updateQuote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQuoteRequest'
+      responses:
+        '200':
+          description: Quote updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Quotes
+      summary: Delete quote
+      operationId: deleteQuote
+      responses:
+        '204':
+          description: Quote deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Quote:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - active
+          - inactive
+          - archived
+        code: &id001
+          type: string
+        displayName: &id002
+          type: string
+        slug: &id003
+          type: string
+        position: &id004
+          type: integer
+        default: &id005
+          type: boolean
+        locked: &id006
+          type: boolean
+        dueDate: &id007
+          type: string
+          format: date
+        fee: &id008
+          type: number
+          format: float
+        total: &id009
+          type: number
+          format: float
+        tagId: &id010
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    QuoteList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Quote'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateQuoteRequest:
+      type: object
+      properties:
+        code: *id001
+        displayName: *id002
+        slug: *id003
+        position: *id004
+        default: *id005
+        locked: *id006
+        dueDate: *id007
+        fee: *id008
+        total: *id009
+        tagId: *id010
+      required:
+      - code
+      - displayName
+    UpdateQuoteRequest:
+      type: object
+      properties:
+        code: *id001
+        displayName: *id002
+        slug: *id003
+        position: *id004
+        default: *id005
+        locked: *id006
+        dueDate: *id007
+        fee: *id008
+        total: *id009
+        tagId: *id010
+      required:
+      - code
+      - displayName
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

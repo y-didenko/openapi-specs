@@ -1,0 +1,303 @@
+openapi: 3.0.3
+info:
+  title: Blogs API
+  description: Blog posts, comments, and tags.
+  version: 1.0.0
+  contact:
+    name: Blogs Team
+    email: blogs@example.com
+servers:
+- url: https://api.example.com/blogs/v1
+  description: Production
+- url: https://staging-api.example.com/blogs/v1
+  description: Staging
+tags:
+- name: Blogs
+  description: Blogs resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /blogs:
+    get:
+      tags:
+      - Blogs
+      summary: List blogs
+      operationId: listBlog
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of blogs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlogList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Blogs
+      summary: Create blog
+      operationId: createBlog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBlogRequest'
+      responses:
+        '201':
+          description: Blog created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Blog'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /blogs/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Blogs
+      summary: Get blog by ID
+      operationId: getBlog
+      responses:
+        '200':
+          description: Blog details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Blog'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Blogs
+      summary: Update blog
+      operationId: updateBlog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBlogRequest'
+      responses:
+        '200':
+          description: Blog updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Blog'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Blogs
+      summary: Delete blog
+      operationId: deleteBlog
+      responses:
+        '204':
+          description: Blog deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Blog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+        notes: &id001
+          type: string
+        slug: &id002
+          type: string
+        default: &id003
+          type: boolean
+        verified: &id004
+          type: boolean
+        startDate: &id005
+          type: string
+          format: date
+        scheduledAt: &id006
+          type: string
+          format: date-time
+        subtotal: &id007
+          type: number
+          format: float
+        discount: &id008
+          type: number
+          format: float
+        categoryId: &id009
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    BlogList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Blog'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateBlogRequest:
+      type: object
+      properties:
+        notes: *id001
+        slug: *id002
+        default: *id003
+        verified: *id004
+        startDate: *id005
+        scheduledAt: *id006
+        subtotal: *id007
+        discount: *id008
+        categoryId: *id009
+      required:
+      - notes
+      - slug
+    UpdateBlogRequest:
+      type: object
+      properties:
+        notes: *id001
+        slug: *id002
+        default: *id003
+        verified: *id004
+        startDate: *id005
+        scheduledAt: *id006
+        subtotal: *id007
+        discount: *id008
+        categoryId: *id009
+      required:
+      - notes
+      - slug
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

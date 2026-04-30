@@ -1,0 +1,583 @@
+openapi: 3.0.3
+info:
+  title: Tours API
+  description: Guided tour bookings.
+  version: 1.0.0
+  contact:
+    name: Tours Team
+    email: tours@example.com
+servers:
+- url: https://api.example.com/tours/v1
+  description: Production
+- url: https://staging-api.example.com/tours/v1
+  description: Staging
+tags:
+- name: Tours
+  description: Tours resource operations.
+- name: History
+  description: History resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /tours:
+    get:
+      tags:
+      - Tours
+      summary: List tours
+      operationId: listTour
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of tours.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TourList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Tours
+      summary: Create tour
+      operationId: createTour
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTourRequest'
+      responses:
+        '201':
+          description: Tour created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tour'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /tours/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Tours
+      summary: Get tour by ID
+      operationId: getTour
+      responses:
+        '200':
+          description: Tour details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tour'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Tours
+      summary: Update tour
+      operationId: updateTour
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTourRequest'
+      responses:
+        '200':
+          description: Tour updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tour'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Tours
+      summary: Delete tour
+      operationId: deleteTour
+      responses:
+        '204':
+          description: Tour deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /tours/stats:
+    get:
+      tags:
+      - Tours
+      summary: Aggregate tours stats
+      operationId: getTourStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /history:
+    get:
+      tags:
+      - History
+      summary: List history
+      operationId: listHistory
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of history.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - History
+      summary: Create history
+      operationId: createHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHistoryRequest'
+      responses:
+        '201':
+          description: History created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /history/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - History
+      summary: Get history by ID
+      operationId: getHistory
+      responses:
+        '200':
+          description: History details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - History
+      summary: Update history
+      operationId: updateHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHistoryRequest'
+      responses:
+        '200':
+          description: History updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - History
+      summary: Delete history
+      operationId: deleteHistory
+      responses:
+        '204':
+          description: History deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Tour:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        description: &id001
+          type: string
+        notes: &id002
+          type: string
+        count: &id003
+          type: integer
+        score: &id004
+          type: number
+          format: float
+        locked: &id005
+          type: boolean
+        completedAt: &id006
+          type: string
+          format: date-time
+        subtotal: &id007
+          type: number
+          format: float
+        amount: &id008
+          type: number
+          format: float
+        updatedBy: &id009
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    TourList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tour'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateTourRequest:
+      type: object
+      properties:
+        description: *id001
+        notes: *id002
+        count: *id003
+        score: *id004
+        locked: *id005
+        completedAt: *id006
+        subtotal: *id007
+        amount: *id008
+        updatedBy: *id009
+      required:
+      - description
+      - notes
+    UpdateTourRequest:
+      type: object
+      properties:
+        description: *id001
+        notes: *id002
+        count: *id003
+        score: *id004
+        locked: *id005
+        completedAt: *id006
+        subtotal: *id007
+        amount: *id008
+        updatedBy: *id009
+      required:
+      - description
+      - notes
+    History:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - open
+          - closed
+        notes: &id010
+          type: string
+        reference: &id011
+          type: string
+        description: &id012
+          type: string
+        score: &id013
+          type: number
+          format: float
+        rank: &id014
+          type: integer
+        visible: &id015
+          type: boolean
+        active: &id016
+          type: boolean
+        dueDate: &id017
+          type: string
+          format: date
+        publishedAt: &id018
+          type: string
+          format: date-time
+        price: &id019
+          type: number
+          format: float
+        subtotal: &id020
+          type: number
+          format: float
+        ownerId: &id021
+          type: string
+          format: uuid
+        createdBy: &id022
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    HistoryList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/History'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateHistoryRequest:
+      type: object
+      properties:
+        notes: *id010
+        reference: *id011
+        description: *id012
+        score: *id013
+        rank: *id014
+        visible: *id015
+        active: *id016
+        dueDate: *id017
+        publishedAt: *id018
+        price: *id019
+        subtotal: *id020
+        ownerId: *id021
+        createdBy: *id022
+      required:
+      - notes
+      - reference
+    UpdateHistoryRequest:
+      type: object
+      properties:
+        notes: *id010
+        reference: *id011
+        description: *id012
+        score: *id013
+        rank: *id014
+        visible: *id015
+        active: *id016
+        dueDate: *id017
+        publishedAt: *id018
+        price: *id019
+        subtotal: *id020
+        ownerId: *id021
+        createdBy: *id022
+      required:
+      - notes
+      - reference
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

@@ -1,0 +1,526 @@
+openapi: 3.0.3
+info:
+  title: Assignments API
+  description: Assignments and submissions.
+  version: 2.0.0
+  contact:
+    name: Assignments Team
+    email: assignments@example.com
+servers:
+- url: https://api.example.com/assignments/v1
+  description: Production
+- url: https://staging-api.example.com/assignments/v1
+  description: Staging
+tags:
+- name: Assignments
+  description: Assignments resource operations.
+- name: Labels
+  description: Labels resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /assignments:
+    get:
+      tags:
+      - Assignments
+      summary: List assignments
+      operationId: listAssignment
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of assignments.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Assignments
+      summary: Create assignment
+      operationId: createAssignment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAssignmentRequest'
+      responses:
+        '201':
+          description: Assignment created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /assignments/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Assignments
+      summary: Get assignment by ID
+      operationId: getAssignment
+      responses:
+        '200':
+          description: Assignment details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Assignments
+      summary: Update assignment
+      operationId: updateAssignment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAssignmentRequest'
+      responses:
+        '200':
+          description: Assignment updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Assignments
+      summary: Delete assignment
+      operationId: deleteAssignment
+      responses:
+        '204':
+          description: Assignment deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /labels:
+    get:
+      tags:
+      - Labels
+      summary: List labels
+      operationId: listLabel
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of labels.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabelList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Labels
+      summary: Create label
+      operationId: createLabel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLabelRequest'
+      responses:
+        '201':
+          description: Label created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /labels/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Labels
+      summary: Get label by ID
+      operationId: getLabel
+      responses:
+        '200':
+          description: Label details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Labels
+      summary: Update label
+      operationId: updateLabel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLabelRequest'
+      responses:
+        '200':
+          description: Label updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Labels
+      summary: Delete label
+      operationId: deleteLabel
+      responses:
+        '204':
+          description: Label deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Assignment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+        reference: &id001
+          type: string
+        code: &id002
+          type: string
+        description: &id003
+          type: string
+        position: &id004
+          type: integer
+        active: &id005
+          type: boolean
+        default: &id006
+          type: boolean
+        scheduledAt: &id007
+          type: string
+          format: date-time
+        amount: &id008
+          type: number
+          format: float
+        total: &id009
+          type: number
+          format: float
+        ownerId: &id010
+          type: string
+          format: uuid
+        organizationId: &id011
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    AssignmentList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Assignment'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateAssignmentRequest:
+      type: object
+      properties:
+        reference: *id001
+        code: *id002
+        description: *id003
+        position: *id004
+        active: *id005
+        default: *id006
+        scheduledAt: *id007
+        amount: *id008
+        total: *id009
+        ownerId: *id010
+        organizationId: *id011
+      required:
+      - reference
+      - code
+    UpdateAssignmentRequest:
+      type: object
+      properties:
+        reference: *id001
+        code: *id002
+        description: *id003
+        position: *id004
+        active: *id005
+        default: *id006
+        scheduledAt: *id007
+        amount: *id008
+        total: *id009
+        ownerId: *id010
+        organizationId: *id011
+      required:
+      - reference
+      - code
+    Label:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        code: &id012
+          type: string
+        notes: &id013
+          type: string
+        default: &id014
+          type: boolean
+        startDate: &id015
+          type: string
+          format: date
+        endDate: &id016
+          type: string
+          format: date
+        total: &id017
+          type: number
+          format: float
+        subtotal: &id018
+          type: number
+          format: float
+        createdBy: &id019
+          type: string
+          format: uuid
+        ownerId: &id020
+          type: string
+          format: uuid
+        websiteUrl: &id021
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    LabelList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateLabelRequest:
+      type: object
+      properties:
+        code: *id012
+        notes: *id013
+        default: *id014
+        startDate: *id015
+        endDate: *id016
+        total: *id017
+        subtotal: *id018
+        createdBy: *id019
+        ownerId: *id020
+        websiteUrl: *id021
+      required:
+      - code
+      - notes
+    UpdateLabelRequest:
+      type: object
+      properties:
+        code: *id012
+        notes: *id013
+        default: *id014
+        startDate: *id015
+        endDate: *id016
+        total: *id017
+        subtotal: *id018
+        createdBy: *id019
+        ownerId: *id020
+        websiteUrl: *id021
+      required:
+      - code
+      - notes
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

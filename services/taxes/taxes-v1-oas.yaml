@@ -1,0 +1,308 @@
+openapi: 3.0.3
+info:
+  title: Taxes API
+  description: Tax calculation, exemptions, and reporting.
+  version: 1.1.0
+  contact:
+    name: Taxes Team
+    email: taxes@example.com
+servers:
+- url: https://api.example.com/taxes/v1
+  description: Production
+- url: https://staging-api.example.com/taxes/v1
+  description: Staging
+tags:
+- name: Taxes
+  description: Taxes resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /taxes:
+    get:
+      tags:
+      - Taxes
+      summary: List taxes
+      operationId: listTaxe
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of taxes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaxeList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Taxes
+      summary: Create taxe
+      operationId: createTaxe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaxeRequest'
+      responses:
+        '201':
+          description: Taxe created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Taxe'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /taxes/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Taxes
+      summary: Get taxe by ID
+      operationId: getTaxe
+      responses:
+        '200':
+          description: Taxe details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Taxe'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Taxes
+      summary: Update taxe
+      operationId: updateTaxe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaxeRequest'
+      responses:
+        '200':
+          description: Taxe updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Taxe'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Taxes
+      summary: Delete taxe
+      operationId: deleteTaxe
+      responses:
+        '204':
+          description: Taxe deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Taxe:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - queued
+          - processing
+          - completed
+          - failed
+          - cancelled
+        slug: &id001
+          type: string
+        summary: &id002
+          type: string
+        threshold: &id003
+          type: number
+          format: float
+        position: &id004
+          type: integer
+        active: &id005
+          type: boolean
+        scheduledAt: &id006
+          type: string
+          format: date-time
+        startDate: &id007
+          type: string
+          format: date
+        categoryId: &id008
+          type: string
+          format: uuid
+        updatedBy: &id009
+          type: string
+          format: uuid
+        phone: &id010
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    TaxeList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Taxe'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateTaxeRequest:
+      type: object
+      properties:
+        slug: *id001
+        summary: *id002
+        threshold: *id003
+        position: *id004
+        active: *id005
+        scheduledAt: *id006
+        startDate: *id007
+        categoryId: *id008
+        updatedBy: *id009
+        phone: *id010
+      required:
+      - slug
+      - summary
+    UpdateTaxeRequest:
+      type: object
+      properties:
+        slug: *id001
+        summary: *id002
+        threshold: *id003
+        position: *id004
+        active: *id005
+        scheduledAt: *id006
+        startDate: *id007
+        categoryId: *id008
+        updatedBy: *id009
+        phone: *id010
+      required:
+      - slug
+      - summary
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

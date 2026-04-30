@@ -1,0 +1,303 @@
+openapi: 3.0.3
+info:
+  title: Benefits API
+  description: Employee benefit elections.
+  version: 2.1.0
+  contact:
+    name: Benefits Team
+    email: benefits@example.com
+servers:
+- url: https://api.example.com/benefits/v1
+  description: Production
+- url: https://staging-api.example.com/benefits/v1
+  description: Staging
+tags:
+- name: Benefits
+  description: Benefits resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /benefits:
+    get:
+      tags:
+      - Benefits
+      summary: List benefits
+      operationId: listBenefit
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of benefits.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BenefitList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Benefits
+      summary: Create benefit
+      operationId: createBenefit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBenefitRequest'
+      responses:
+        '201':
+          description: Benefit created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Benefit'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /benefits/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Benefits
+      summary: Get benefit by ID
+      operationId: getBenefit
+      responses:
+        '200':
+          description: Benefit details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Benefit'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Benefits
+      summary: Update benefit
+      operationId: updateBenefit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBenefitRequest'
+      responses:
+        '200':
+          description: Benefit updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Benefit'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Benefits
+      summary: Delete benefit
+      operationId: deleteBenefit
+      responses:
+        '204':
+          description: Benefit deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Benefit:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+        description: &id001
+          type: string
+        summary: &id002
+          type: string
+        threshold: &id003
+          type: number
+          format: float
+        version: &id004
+          type: integer
+        locked: &id005
+          type: boolean
+        publishedAt: &id006
+          type: string
+          format: date-time
+        lastSeenAt: &id007
+          type: string
+          format: date-time
+        price: &id008
+          type: number
+          format: float
+        organizationId: &id009
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    BenefitList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Benefit'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateBenefitRequest:
+      type: object
+      properties:
+        description: *id001
+        summary: *id002
+        threshold: *id003
+        version: *id004
+        locked: *id005
+        publishedAt: *id006
+        lastSeenAt: *id007
+        price: *id008
+        organizationId: *id009
+      required:
+      - description
+      - summary
+    UpdateBenefitRequest:
+      type: object
+      properties:
+        description: *id001
+        summary: *id002
+        threshold: *id003
+        version: *id004
+        locked: *id005
+        publishedAt: *id006
+        lastSeenAt: *id007
+        price: *id008
+        organizationId: *id009
+      required:
+      - description
+      - summary
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

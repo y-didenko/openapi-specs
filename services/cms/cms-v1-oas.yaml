@@ -1,0 +1,515 @@
+openapi: 3.0.3
+info:
+  title: CMS API
+  description: Headless content management.
+  version: 1.1.0
+  contact:
+    name: CMS Team
+    email: cms@example.com
+servers:
+- url: https://api.example.com/cms/v1
+  description: Production
+- url: https://staging-api.example.com/cms/v1
+  description: Staging
+tags:
+- name: Cms
+  description: Cms resource operations.
+- name: Notes
+  description: Notes resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /cms:
+    get:
+      tags:
+      - Cms
+      summary: List cms
+      operationId: listCm
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of cms.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CmList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Cms
+      summary: Create cm
+      operationId: createCm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCmRequest'
+      responses:
+        '201':
+          description: Cm created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cm'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /cms/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Cms
+      summary: Get cm by ID
+      operationId: getCm
+      responses:
+        '200':
+          description: Cm details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cm'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Cms
+      summary: Update cm
+      operationId: updateCm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCmRequest'
+      responses:
+        '200':
+          description: Cm updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cm'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Cms
+      summary: Delete cm
+      operationId: deleteCm
+      responses:
+        '204':
+          description: Cm deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /notes:
+    get:
+      tags:
+      - Notes
+      summary: List notes
+      operationId: listNote
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of notes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Notes
+      summary: Create note
+      operationId: createNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNoteRequest'
+      responses:
+        '201':
+          description: Note created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /notes/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Notes
+      summary: Get note by ID
+      operationId: getNote
+      responses:
+        '200':
+          description: Note details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Notes
+      summary: Update note
+      operationId: updateNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNoteRequest'
+      responses:
+        '200':
+          description: Note updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Notes
+      summary: Delete note
+      operationId: deleteNote
+      responses:
+        '204':
+          description: Note deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Cm:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        slug: &id001
+          type: string
+        summary: &id002
+          type: string
+        active: &id003
+          type: boolean
+        expiresAt: &id004
+          type: string
+          format: date-time
+        price: &id005
+          type: number
+          format: float
+        parentId: &id006
+          type: string
+          format: uuid
+        teamId: &id007
+          type: string
+          format: uuid
+        websiteUrl: &id008
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    CmList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cm'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateCmRequest:
+      type: object
+      properties:
+        slug: *id001
+        summary: *id002
+        active: *id003
+        expiresAt: *id004
+        price: *id005
+        parentId: *id006
+        teamId: *id007
+        websiteUrl: *id008
+      required:
+      - slug
+      - summary
+    UpdateCmRequest:
+      type: object
+      properties:
+        slug: *id001
+        summary: *id002
+        active: *id003
+        expiresAt: *id004
+        price: *id005
+        parentId: *id006
+        teamId: *id007
+        websiteUrl: *id008
+      required:
+      - slug
+      - summary
+    Note:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - scheduled
+          - running
+          - completed
+          - failed
+        reference: &id009
+          type: string
+        description: &id010
+          type: string
+        capacity: &id011
+          type: integer
+        priority: &id012
+          type: integer
+        default: &id013
+          type: boolean
+        locked: &id014
+          type: boolean
+        endDate: &id015
+          type: string
+          format: date
+        subtotal: &id016
+          type: number
+          format: float
+        price: &id017
+          type: number
+          format: float
+        createdBy: &id018
+          type: string
+          format: uuid
+        phone: &id019
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    NoteList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Note'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateNoteRequest:
+      type: object
+      properties:
+        reference: *id009
+        description: *id010
+        capacity: *id011
+        priority: *id012
+        default: *id013
+        locked: *id014
+        endDate: *id015
+        subtotal: *id016
+        price: *id017
+        createdBy: *id018
+        phone: *id019
+      required:
+      - reference
+      - description
+    UpdateNoteRequest:
+      type: object
+      properties:
+        reference: *id009
+        description: *id010
+        capacity: *id011
+        priority: *id012
+        default: *id013
+        locked: *id014
+        endDate: *id015
+        subtotal: *id016
+        price: *id017
+        createdBy: *id018
+        phone: *id019
+      required:
+      - reference
+      - description
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

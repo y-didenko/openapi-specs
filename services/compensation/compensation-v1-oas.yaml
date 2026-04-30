@@ -1,0 +1,564 @@
+openapi: 3.0.3
+info:
+  title: Compensation API
+  description: Salary bands and pay history.
+  version: 1.1.0
+  contact:
+    name: Compensation Team
+    email: compensation@example.com
+servers:
+- url: https://api.example.com/compensation/v1
+  description: Production
+- url: https://staging-api.example.com/compensation/v1
+  description: Staging
+tags:
+- name: Compensation
+  description: Compensation resource operations.
+- name: History
+  description: History resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /compensation:
+    get:
+      tags:
+      - Compensation
+      summary: List compensation
+      operationId: listCompensation
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of compensation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompensationList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Compensation
+      summary: Create compensation
+      operationId: createCompensation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCompensationRequest'
+      responses:
+        '201':
+          description: Compensation created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compensation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /compensation/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Compensation
+      summary: Get compensation by ID
+      operationId: getCompensation
+      responses:
+        '200':
+          description: Compensation details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compensation'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Compensation
+      summary: Update compensation
+      operationId: updateCompensation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCompensationRequest'
+      responses:
+        '200':
+          description: Compensation updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compensation'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Compensation
+      summary: Delete compensation
+      operationId: deleteCompensation
+      responses:
+        '204':
+          description: Compensation deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /compensation/stats:
+    get:
+      tags:
+      - Compensation
+      summary: Aggregate compensation stats
+      operationId: getCompensationStats
+      description: Returns aggregate counters (totals, by status, by day) suitable for dashboards.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Aggregate stats.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  byStatus:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  byDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        count:
+                          type: integer
+                example:
+                  total: 1234
+                  byStatus:
+                    active: 800
+                    archived: 200
+                    pending: 234
+                  byDay:
+                  - date: '2026-04-28'
+                    count: 42
+                  - date: '2026-04-29'
+                    count: 51
+      security:
+      - bearerAuth: []
+  /history:
+    get:
+      tags:
+      - History
+      summary: List history
+      operationId: listHistory
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of history.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - History
+      summary: Create history
+      operationId: createHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHistoryRequest'
+      responses:
+        '201':
+          description: History created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /history/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - History
+      summary: Get history by ID
+      operationId: getHistory
+      responses:
+        '200':
+          description: History details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - History
+      summary: Update history
+      operationId: updateHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHistoryRequest'
+      responses:
+        '200':
+          description: History updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - History
+      summary: Delete history
+      operationId: deleteHistory
+      responses:
+        '204':
+          description: History deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Compensation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        slug: &id001
+          type: string
+        notes: &id002
+          type: string
+        displayName: &id003
+          type: string
+        version: &id004
+          type: integer
+        archived: &id005
+          type: boolean
+        verified: &id006
+          type: boolean
+        completedAt: &id007
+          type: string
+          format: date-time
+        fee: &id008
+          type: number
+          format: float
+        createdBy: &id009
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    CompensationList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Compensation'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateCompensationRequest:
+      type: object
+      properties:
+        slug: *id001
+        notes: *id002
+        displayName: *id003
+        version: *id004
+        archived: *id005
+        verified: *id006
+        completedAt: *id007
+        fee: *id008
+        createdBy: *id009
+      required:
+      - slug
+      - notes
+    UpdateCompensationRequest:
+      type: object
+      properties:
+        slug: *id001
+        notes: *id002
+        displayName: *id003
+        version: *id004
+        archived: *id005
+        verified: *id006
+        completedAt: *id007
+        fee: *id008
+        createdBy: *id009
+      required:
+      - slug
+      - notes
+    History:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        slug: &id010
+          type: string
+        reference: &id011
+          type: string
+        score: &id012
+          type: number
+          format: float
+        weight: &id013
+          type: number
+          format: float
+        default: &id014
+          type: boolean
+        startDate: &id015
+          type: string
+          format: date
+        organizationId: &id016
+          type: string
+          format: uuid
+        categoryId: &id017
+          type: string
+          format: uuid
+        phone: &id018
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    HistoryList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/History'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateHistoryRequest:
+      type: object
+      properties:
+        slug: *id010
+        reference: *id011
+        score: *id012
+        weight: *id013
+        default: *id014
+        startDate: *id015
+        organizationId: *id016
+        categoryId: *id017
+        phone: *id018
+      required:
+      - slug
+      - reference
+    UpdateHistoryRequest:
+      type: object
+      properties:
+        slug: *id010
+        reference: *id011
+        score: *id012
+        weight: *id013
+        default: *id014
+        startDate: *id015
+        organizationId: *id016
+        categoryId: *id017
+        phone: *id018
+      required:
+      - slug
+      - reference
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

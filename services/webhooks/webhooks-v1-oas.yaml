@@ -1,0 +1,296 @@
+openapi: 3.0.3
+info:
+  title: Webhooks API
+  description: Outgoing webhook subscriptions and delivery.
+  version: 1.2.0
+  contact:
+    name: Webhooks Team
+    email: webhooks@example.com
+servers:
+- url: https://api.example.com/webhooks/v1
+  description: Production
+- url: https://staging-api.example.com/webhooks/v1
+  description: Staging
+tags:
+- name: Webhooks
+  description: Webhooks resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /webhooks:
+    get:
+      tags:
+      - Webhooks
+      summary: List webhooks
+      operationId: listWebhook
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of webhooks.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Webhooks
+      summary: Create webhook
+      operationId: createWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWebhookRequest'
+      responses:
+        '201':
+          description: Webhook created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /webhooks/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Webhooks
+      summary: Get webhook by ID
+      operationId: getWebhook
+      responses:
+        '200':
+          description: Webhook details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Webhooks
+      summary: Update webhook
+      operationId: updateWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWebhookRequest'
+      responses:
+        '200':
+          description: Webhook updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Webhooks
+      summary: Delete webhook
+      operationId: deleteWebhook
+      responses:
+        '204':
+          description: Webhook deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Webhook:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+        notes: &id001
+          type: string
+        code: &id002
+          type: string
+        count: &id003
+          type: integer
+        verified: &id004
+          type: boolean
+        scheduledAt: &id005
+          type: string
+          format: date-time
+        updatedBy: &id006
+          type: string
+          format: uuid
+        categoryId: &id007
+          type: string
+          format: uuid
+        phone: &id008
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    WebhookList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Webhook'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateWebhookRequest:
+      type: object
+      properties:
+        notes: *id001
+        code: *id002
+        count: *id003
+        verified: *id004
+        scheduledAt: *id005
+        updatedBy: *id006
+        categoryId: *id007
+        phone: *id008
+      required:
+      - notes
+      - code
+    UpdateWebhookRequest:
+      type: object
+      properties:
+        notes: *id001
+        code: *id002
+        count: *id003
+        verified: *id004
+        scheduledAt: *id005
+        updatedBy: *id006
+        categoryId: *id007
+        phone: *id008
+      required:
+      - notes
+      - code
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

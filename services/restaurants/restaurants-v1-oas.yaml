@@ -1,0 +1,302 @@
+openapi: 3.0.3
+info:
+  title: Restaurants API
+  description: Restaurant directory.
+  version: 1.1.0
+  contact:
+    name: Restaurants Team
+    email: restaurants@example.com
+servers:
+- url: https://api.example.com/restaurants/v1
+  description: Production
+- url: https://staging-api.example.com/restaurants/v1
+  description: Staging
+tags:
+- name: Restaurants
+  description: Restaurants resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /restaurants:
+    get:
+      tags:
+      - Restaurants
+      summary: List restaurants
+      operationId: listRestaurant
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of restaurants.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurantList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Restaurants
+      summary: Create restaurant
+      operationId: createRestaurant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRestaurantRequest'
+      responses:
+        '201':
+          description: Restaurant created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Restaurant'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /restaurants/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Restaurants
+      summary: Get restaurant by ID
+      operationId: getRestaurant
+      responses:
+        '200':
+          description: Restaurant details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Restaurant'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Restaurants
+      summary: Update restaurant
+      operationId: updateRestaurant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRestaurantRequest'
+      responses:
+        '200':
+          description: Restaurant updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Restaurant'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Restaurants
+      summary: Delete restaurant
+      operationId: deleteRestaurant
+      responses:
+        '204':
+          description: Restaurant deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Restaurant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - new
+          - in_progress
+          - resolved
+          - closed
+        name: &id001
+          type: string
+        notes: &id002
+          type: string
+        priority: &id003
+          type: integer
+        enabled: &id004
+          type: boolean
+        archived: &id005
+          type: boolean
+        lastSeenAt: &id006
+          type: string
+          format: date-time
+        completedAt: &id007
+          type: string
+          format: date-time
+        total: &id008
+          type: number
+          format: float
+        categoryId: &id009
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    RestaurantList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Restaurant'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateRestaurantRequest:
+      type: object
+      properties:
+        name: *id001
+        notes: *id002
+        priority: *id003
+        enabled: *id004
+        archived: *id005
+        lastSeenAt: *id006
+        completedAt: *id007
+        total: *id008
+        categoryId: *id009
+      required:
+      - name
+      - notes
+    UpdateRestaurantRequest:
+      type: object
+      properties:
+        name: *id001
+        notes: *id002
+        priority: *id003
+        enabled: *id004
+        archived: *id005
+        lastSeenAt: *id006
+        completedAt: *id007
+        total: *id008
+        categoryId: *id009
+      required:
+      - name
+      - notes
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

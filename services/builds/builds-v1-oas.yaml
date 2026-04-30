@@ -1,0 +1,311 @@
+openapi: 3.0.3
+info:
+  title: Builds API
+  description: CI build records.
+  version: 2.1.0
+  contact:
+    name: Builds Team
+    email: builds@example.com
+servers:
+- url: https://api.example.com/builds/v1
+  description: Production
+- url: https://staging-api.example.com/builds/v1
+  description: Staging
+tags:
+- name: Builds
+  description: Builds resource operations.
+- name: Health
+  description: Service health checks.
+paths:
+  /builds:
+    get:
+      tags:
+      - Builds
+      summary: List builds
+      operationId: listBuild
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: q
+        in: query
+        description: Free-text search
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of builds.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BuildList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Builds
+      summary: Create build
+      operationId: createBuild
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBuildRequest'
+      responses:
+        '201':
+          description: Build created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Build'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+      - bearerAuth: []
+  /builds/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      tags:
+      - Builds
+      summary: Get build by ID
+      operationId: getBuild
+      responses:
+        '200':
+          description: Build details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Build'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Builds
+      summary: Update build
+      operationId: updateBuild
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBuildRequest'
+      responses:
+        '200':
+          description: Build updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Build'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Builds
+      summary: Delete build
+      operationId: deleteBuild
+      responses:
+        '204':
+          description: Build deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+      - bearerAuth: []
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Service health probe
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptimeSeconds:
+                    type: integer
+                    example: 12345
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 1234
+        totalPages:
+          type: integer
+          example: 62
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: One or more fields failed validation.
+        details:
+          type: object
+          additionalProperties: true
+    Build:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - scheduled
+          - running
+          - completed
+          - failed
+        slug: &id001
+          type: string
+        displayName: &id002
+          type: string
+        reference: &id003
+          type: string
+        archived: &id004
+          type: boolean
+        enabled: &id005
+          type: boolean
+        completedAt: &id006
+          type: string
+          format: date-time
+        scheduledAt: &id007
+          type: string
+          format: date-time
+        currency: &id008
+          type: string
+        subtotal: &id009
+          type: number
+          format: float
+        categoryId: &id010
+          type: string
+          format: uuid
+        parentId: &id011
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - status
+      - createdAt
+      - updatedAt
+    BuildList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Build'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    CreateBuildRequest:
+      type: object
+      properties:
+        slug: *id001
+        displayName: *id002
+        reference: *id003
+        archived: *id004
+        enabled: *id005
+        completedAt: *id006
+        scheduledAt: *id007
+        currency: *id008
+        subtotal: *id009
+        categoryId: *id010
+        parentId: *id011
+      required:
+      - slug
+      - displayName
+    UpdateBuildRequest:
+      type: object
+      properties:
+        slug: *id001
+        displayName: *id002
+        reference: *id003
+        archived: *id004
+        enabled: *id005
+        completedAt: *id006
+        scheduledAt: *id007
+        currency: *id008
+        subtotal: *id009
+        categoryId: *id010
+        parentId: *id011
+      required:
+      - slug
+      - displayName
+  responses:
+    BadRequest:
+      description: "Bad request \u2014 input failed validation."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required or token invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
